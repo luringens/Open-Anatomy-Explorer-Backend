@@ -1,15 +1,17 @@
 // src/main.rs
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+use actix::prelude::*;
+use actix_web::{App, HttpServer};
+use database::*;
 use dotenv::dotenv;
 use listenfd::ListenFd;
 use log::info;
 use std::env;
 
+mod database;
 mod label;
 
-#[get("/")]
-async fn index() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+struct State {
+    db: Addr<DbExecutor>,
 }
 
 #[actix_rt::main]
@@ -17,8 +19,13 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
 
+    let addr = SyncArbiter::start(1, DbExecutor::new);
     let mut listenfd = ListenFd::from_env();
-    let mut server = HttpServer::new(|| App::new().configure(label::init_routes));
+    let mut server = HttpServer::new(move || {
+        App::new()
+            .data(State { db: addr.clone() })
+            .configure(label::init_routes)
+    });
 
     server = match listenfd.take_tcp_listener(0)? {
         Some(listener) => server.listen(listener)?,
