@@ -1,31 +1,20 @@
 // src/LabelPoint/routes.rs
+use crate::database::*;
 use crate::label::*;
+use crate::State;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
-#[get("/LabelPoints")]
-async fn find_all() -> impl Responder {
-    HttpResponse::Ok().json(vec![
-        LabelPoint {
-            id: 1,
-            position: Vector2 { x: 0.0, y: 0.0 },
-            color: "#FF0000".to_string(),
-        },
-        LabelPoint {
-            id: 2,
-            position: Vector2 { x: 0.0, y: 0.0 },
-            color: "#FF0000".to_string(),
-        },
-    ])
-}
-
 #[get("/LabelPoints/{id}")]
-async fn find() -> impl Responder {
-    HttpResponse::Ok().json(LabelPoint {
-        id: 1,
-        position: Vector2 { x: 0.0, y: 0.0 },
-        color: "#FF0000".to_string(),
-    })
+async fn find(data: web::Data<State>) -> impl Responder {
+    data.db
+        .send(LoadLabelPoint { id: "123" })
+        .from_err()
+        .and_then(|res| match res {
+            Ok(label) => Ok(HttpResponse::Ok().json(label)),
+            Err(_) => Ok(HttpResponse::InternalServerError().into()),
+        })
+        .responder()
 }
 
 #[post("/LabelPoints")]
@@ -44,7 +33,6 @@ async fn delete() -> impl Responder {
 }
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(find_all);
     cfg.service(find);
     cfg.service(create);
     cfg.service(update);

@@ -1,12 +1,12 @@
 // src/main.rs
 use actix::prelude::*;
+use actix_web::middleware::Logger;
 use actix_web::{App, HttpServer};
 use database::*;
 use dotenv::dotenv;
 use listenfd::ListenFd;
 use log::info;
 use std::env;
-
 mod database;
 mod label;
 
@@ -23,6 +23,8 @@ async fn main() -> std::io::Result<()> {
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .data(State { db: addr.clone() })
             .configure(label::init_routes)
     });
