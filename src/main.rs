@@ -18,6 +18,7 @@ struct State {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
+    env::var("DATA_DIR").expect("DATA_DIR not set");
 
     let addr = SyncArbiter::start(1, DbExecutor::new);
     let mut listenfd = ListenFd::from_env();

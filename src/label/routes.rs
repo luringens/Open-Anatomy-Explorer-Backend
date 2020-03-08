@@ -1,35 +1,80 @@
-// src/LabelPoint/routes.rs
 use crate::database::*;
 use crate::label::*;
 use crate::State;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use serde_json::json;
+use log::warn;
+use uuid::Uuid;
 
-#[get("/LabelPoints/{id}")]
-async fn find(data: web::Data<State>) -> impl Responder {
-    data.db
-        .send(LoadLabelPoint { id: "123" })
-        .from_err()
+#[get("/LabelPoints/{uid}")]
+async fn find(state: web::Data<State>, uid: web::Path<Uuid>) -> impl Responder {
+    let id = uid.into_inner();
+    state
+        .db
+        .send(LoadLabelPoint { id })
+        .await
         .and_then(|res| match res {
             Ok(label) => Ok(HttpResponse::Ok().json(label)),
-            Err(_) => Ok(HttpResponse::InternalServerError().into()),
+            Err(e) => {
+                warn!("{}", e);
+                Ok(HttpResponse::InternalServerError().into())
+            }
         })
-        .responder()
 }
 
 #[post("/LabelPoints")]
-async fn create(labelpoint: web::Json<LabelPoint>) -> impl Responder {
-    HttpResponse::Created().json(labelpoint.into_inner())
+async fn create(state: web::Data<State>, data: web::Json<Vec<LabelPoint>>) -> impl Responder {
+    state
+        .db
+        .send(CreateLabelPoint {
+            data: data.into_inner(),
+            uuid: None,
+        })
+        .await
+        .and_then(|res| match res {
+            Ok(id) => Ok(HttpResponse::Created().json(id)),
+            Err(e) => {
+                warn!("{}", e);
+                Ok(HttpResponse::InternalServerError().into())
+            }
+        })
 }
 
 #[put("/LabelPoints/{id}")]
-async fn update(labelpoint: web::Json<LabelPoint>) -> impl Responder {
-    HttpResponse::Ok().json(labelpoint.into_inner())
+async fn update(
+    state: web::Data<State>,
+    data: web::Json<Vec<LabelPoint>>,
+    uid: web::Path<Uuid>,
+) -> impl Responder {
+    state
+        .db
+        .send(CreateLabelPoint {
+            data: data.into_inner(),
+            uuid: Some(uid.into_inner()),
+        })
+        .await
+        .and_then(|res| match res {
+            Ok(_) => Ok(HttpResponse::Ok()),
+            Err(e) => {
+                warn!("{}", e);
+                Ok(HttpResponse::InternalServerError())
+            }
+        })
 }
 
 #[delete("/LabelPoints/{id}")]
-async fn delete() -> impl Responder {
-    HttpResponse::Ok().json(json!({"message": "Deleted"}))
+async fn delete(state: web::Data<State>, uid: web::Path<Uuid>) -> impl Responder {
+    let id = uid.into_inner();
+    state
+        .db
+        .send(DeleteLabelPoint { id })
+        .await
+        .and_then(|res| match res {
+            Ok(_) => Ok(HttpResponse::Ok()),
+            Err(e) => {
+                warn!("{}", e);
+                Ok(HttpResponse::InternalServerError())
+            }
+        })
 }
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {

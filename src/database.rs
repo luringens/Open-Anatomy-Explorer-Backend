@@ -1,7 +1,9 @@
 use crate::label::*;
 use actix::prelude::*;
+use std::{env, error::Error};
 use uuid::Uuid;
-// use postgres::Client;
+
+pub use messages::*;
 
 pub struct DbExecutor();
 
@@ -15,40 +17,68 @@ impl Actor for DbExecutor {
     type Context = SyncContext<Self>;
 }
 
-pub struct CreateLabelPoint {
-    pub data: LabelPoint,
-}
-
-impl Message for CreateLabelPoint {
-    type Result = Result<uuid::Uuid, Box<dyn std::error::Error>>;
-}
-
 impl Handler<CreateLabelPoint> for DbExecutor {
-    type Result = Result<uuid::Uuid, Box<dyn std::error::Error>>;
+    type Result = Result<uuid::Uuid, Box<dyn Error + Send + Sync>>;
 
     fn handle(&mut self, msg: CreateLabelPoint, _: &mut Self::Context) -> Self::Result {
-        let id = Uuid::new_v4();
+        let data_dir = env::var("DATA_DIR").unwrap();
+        let id = msg.uuid.unwrap_or_else(Uuid::new_v4);
         let data = serde_json::to_string(&msg.data)?;
-        std::fs::write(format!("./json/{}", id), data)?;
+        std::fs::write(format!("{}/{}.json", data_dir, id), data)?;
         Ok(id)
     }
 }
 
-pub struct LoadLabelPoint<'a> {
-    pub id: &'a str,
-}
+impl Handler<LoadLabelPoint> for DbExecutor {
+    type Result = Result<Vec<LabelPoint>, Box<dyn Error + Send + Sync>>;
 
-impl<'a> Message for LoadLabelPoint<'a> {
-    type Result = Result<LabelPoint, Box<dyn std::error::Error>>;
-}
-
-impl<'a> Handler<LoadLabelPoint<'a>> for DbExecutor {
-    type Result = Result<LabelPoint, Box<dyn std::error::Error>>;
-
-    fn handle(&mut self, msg: LoadLabelPoint<'a>, _: &mut Self::Context) -> Self::Result {
-        let data = std::fs::read(format!("./json/{}", &msg.id))?;
+    fn handle(&mut self, msg: LoadLabelPoint, _: &mut Self::Context) -> Self::Result {
+        let data_dir = env::var("DATA_DIR").unwrap();
+        let data = std::fs::read(format!("{}/{}.json", data_dir, &msg.id))?;
         let string = std::str::from_utf8(&data)?;
         let result = serde_json::from_str(string)?;
         Ok(result)
+    }
+}
+
+impl Handler<DeleteLabelPoint> for DbExecutor {
+    type Result = Result<(), Box<dyn Error + Send + Sync>>;
+
+    fn handle(&mut self, msg: DeleteLabelPoint, _: &mut Self::Context) -> Self::Result {
+        let data_dir = env::var("DATA_DIR").unwrap();
+        std::fs::remove_file(format!("{}/{}.json", data_dir, &msg.id))?;
+        Ok(())
+    }
+}
+
+mod messages {
+    use crate::label::*;
+    use actix::prelude::*;
+    use std::error::Error;
+    use uuid::Uuid;
+
+    pub struct CreateLabelPoint {
+        pub data: Vec<LabelPoint>,
+        pub uuid: Option<Uuid>,
+    }
+
+    impl Message for CreateLabelPoint {
+        type Result = Result<uuid::Uuid, Box<dyn Error + Send + Sync>>;
+    }
+
+    pub struct LoadLabelPoint {
+        pub id: Uuid,
+    }
+
+    impl Message for LoadLabelPoint {
+        type Result = Result<Vec<LabelPoint>, Box<dyn Error + Send + Sync>>;
+    }
+
+    pub struct DeleteLabelPoint {
+        pub id: Uuid,
+    }
+
+    impl Message for DeleteLabelPoint {
+        type Result = Result<(), Box<dyn Error + Send + Sync>>;
     }
 }
