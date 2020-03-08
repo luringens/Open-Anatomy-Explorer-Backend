@@ -3,26 +3,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LabelPoint {
     pub id: i32,
-    pub position: Vector2,
+    pub pos: Vector,
     pub color: String,
+    pub name: String,
+    pub radius: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct LabelRegion {
-    pub id: i32,
-    pub position: Vector3,
-    pub color: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Vector2 {
-    pub x: f32,
-    pub y: f32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Vector3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+pub struct Vector {
+    pub x: f64,
+    pub y: f64,
+    pub z: Option<f64>,
 }
