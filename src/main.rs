@@ -1,5 +1,6 @@
 // src/main.rs
 use actix::prelude::*;
+use actix_files as fs;
 use actix_web::middleware::Logger;
 use actix_web::{App, HttpServer};
 use database::*;
@@ -7,11 +8,32 @@ use dotenv::dotenv;
 use listenfd::ListenFd;
 use log::info;
 use std::env;
+
 mod database;
 mod label;
 
 struct State {
     db: Addr<DbExecutor>,
+}
+
+fn files(
+    dir: &actix_files::Directory,
+    req: &actix_web::HttpRequest,
+) -> Result<actix_web::dev::ServiceResponse, std::io::Error> {
+    let mut names: Vec<String> = Vec::new();
+    for file in std::fs::read_dir(&dir.path)? {
+        names.push(
+            file?
+                .file_name()
+                .into_string()
+                .unwrap_or_else(|e| format!("{:?}", e)),
+        );
+    }
+
+    Ok(actix_web::dev::ServiceResponse::new(
+        req.clone(),
+        actix_web::HttpResponse::Ok().json(names),
+    ))
 }
 
 #[actix_rt::main]
@@ -36,6 +58,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(actix_cors::Cors::new().allowed_origin(&cors).finish())
             .data(State { db: addr.clone() })
             .configure(label::init_routes)
+            .service(
+                fs::Files::new("/models", "./models")
+                    .show_files_listing()
+                    .files_listing_renderer(files),
+            )
     });
 
     server = match listenfd.take_tcp_listener(0)? {
