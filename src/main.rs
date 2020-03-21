@@ -40,7 +40,6 @@ fn files(
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
-    let cors = env::var("CORS_ACCEPT").expect("CORS not set");
 
     let dir = env::var("DATA_DIR").expect("DATA_DIR not set");
     match std::fs::create_dir(&dir) {
@@ -55,7 +54,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
-            .wrap(actix_cors::Cors::new().allowed_origin(&cors).finish())
+            .wrap(actix_cors::Cors::default())
             .data(State { db: addr.clone() })
             .configure(label::init_routes)
             .service(
