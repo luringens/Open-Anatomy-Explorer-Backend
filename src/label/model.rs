@@ -6,6 +6,7 @@ pub struct LabelPoint {
     pub pos: Vector,
     pub color: String,
     pub name: String,
+    pub model: String,
     pub radius: Option<f64>,
 }
 
