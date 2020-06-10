@@ -3,11 +3,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LabelPoint {
     pub id: i32,
-    pub pos: Vector,
     pub color: String,
     pub name: String,
     pub model: String,
-    pub radius: Option<f64>,
+    pub vertices: Vec<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
