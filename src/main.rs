@@ -3,17 +3,20 @@ use actix::prelude::*;
 use actix_files as fs;
 use actix_web::middleware::Logger;
 use actix_web::{App, HttpServer};
-use database::*;
 use dotenv::dotenv;
 use listenfd::ListenFd;
 use log::info;
 use std::env;
 
-mod database;
-mod label;
+use crate::label::database::*;
+use crate::quiz::database::*;
 
-struct State {
-    db: Addr<DbExecutor>,
+mod label;
+mod quiz;
+
+pub struct State {
+    label_db: Addr<LabelDbExecutor>,
+    quiz_db: Addr<QuizDbExecutor>,
 }
 
 fn files(
@@ -41,22 +44,33 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
 
-    let dir = env::var("DATA_DIR").expect("DATA_DIR not set");
-    match std::fs::create_dir(&dir) {
+    let label_dir = env::var("LABEL_DATA_DIR").expect("LABEL_DATA_DIR not set");
+    match std::fs::create_dir(&label_dir) {
         Ok(_) => {}
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
-        _ => panic!("Could not find or create data dir!"),
+        _ => panic!("Could not find or create label data dir!"),
+    }
+    let quiz_dir = env::var("QUIZ_DATA_DIR").expect("QUIZ_DATA_DIR not set");
+    match std::fs::create_dir(&quiz_dir) {
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+        _ => panic!("Could not find or create quiz data dir!"),
     }
 
-    let addr = SyncArbiter::start(1, DbExecutor::new);
+    let label_addr = SyncArbiter::start(1, LabelDbExecutor::new);
+    let quiz_addr = SyncArbiter::start(1, QuizDbExecutor::new);
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
             .wrap(actix_cors::Cors::default())
-            .data(State { db: addr.clone() })
+            .data(State {
+                label_db: label_addr.clone(),
+                quiz_db: quiz_addr.clone(),
+            })
             .configure(label::init_routes)
+            .configure(quiz::init_routes)
             .service(
                 fs::Files::new("/models", "./models")
                     .show_files_listing()

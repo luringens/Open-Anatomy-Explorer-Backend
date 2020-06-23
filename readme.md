@@ -8,7 +8,8 @@ This backend must be configured through environment variables. For example:
 RUST_LOG=inf319-backend=info,actix=info
 HOST=localhost
 PORT=5000
-DATA_DIR=./json
+LABEL_DATA_DIR=./data-labels
+QUIZ_DATA_DIR=./data-quiz
 ```
 
 ## Building

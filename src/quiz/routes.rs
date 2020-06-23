@@ -1,16 +1,16 @@
-use crate::label::database::*;
-use crate::label::*;
+use crate::quiz::database::*;
+use crate::quiz::*;
 use crate::State;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use log::warn;
 use uuid::Uuid;
 
-#[get("/LabelPoints/{uid}")]
+#[get("/Quiz/{uid}")]
 async fn find(state: web::Data<State>, uid: web::Path<Uuid>) -> impl Responder {
     let id = uid.into_inner();
     state
-        .label_db
-        .send(LoadLabelPoint { id })
+        .quiz_db
+        .send(LoadQuiz { id })
         .await
         .and_then(|res| match res {
             Ok(label) => Ok(HttpResponse::Ok().json(label)),
@@ -21,11 +21,11 @@ async fn find(state: web::Data<State>, uid: web::Path<Uuid>) -> impl Responder {
         })
 }
 
-#[post("/LabelPoints")]
-async fn create(state: web::Data<State>, data: web::Json<Vec<LabelPoint>>) -> impl Responder {
+#[post("/Quiz")]
+async fn create(state: web::Data<State>, data: web::Json<Quiz>) -> impl Responder {
     state
-        .label_db
-        .send(CreateLabelPoint {
+        .quiz_db
+        .send(CreateQuiz {
             data: data.into_inner(),
             uuid: None,
         })
@@ -39,15 +39,15 @@ async fn create(state: web::Data<State>, data: web::Json<Vec<LabelPoint>>) -> im
         })
 }
 
-#[put("/LabelPoints/{id}")]
+#[put("/Quiz/{id}")]
 async fn update(
     state: web::Data<State>,
-    data: web::Json<Vec<LabelPoint>>,
+    data: web::Json<Quiz>,
     uid: web::Path<Uuid>,
 ) -> impl Responder {
     state
-        .label_db
-        .send(CreateLabelPoint {
+        .quiz_db
+        .send(CreateQuiz {
             data: data.into_inner(),
             uuid: Some(uid.into_inner()),
         })
@@ -61,12 +61,12 @@ async fn update(
         })
 }
 
-#[delete("/LabelPoints/{id}")]
+#[delete("/Quiz/{id}")]
 async fn delete(state: web::Data<State>, uid: web::Path<Uuid>) -> impl Responder {
     let id = uid.into_inner();
     state
-        .label_db
-        .send(DeleteLabelPoint { id })
+        .quiz_db
+        .send(DeleteQuiz { id })
         .await
         .and_then(|res| match res {
             Ok(_) => Ok(HttpResponse::Ok()),
