@@ -2,14 +2,16 @@
 use actix::prelude::*;
 use actix_files as fs;
 use actix_web::middleware::Logger;
-use actix_web::{App, HttpServer};
+use actix_web::{web, App, FromRequest, HttpServer};
 use dotenv::dotenv;
 use listenfd::ListenFd;
 use log::info;
 use std::env;
 
 use crate::label::database::*;
+use crate::label::LabelPoint;
 use crate::quiz::database::*;
+use crate::quiz::Quiz;
 
 mod label;
 mod quiz;
@@ -76,6 +78,8 @@ async fn main() -> std::io::Result<()> {
                     .show_files_listing()
                     .files_listing_renderer(files),
             )
+            .app_data(web::Json::<LabelPoint>::configure(|cfg| cfg.limit(10485760)))
+            .app_data(web::Json::<Quiz>::configure(|cfg| cfg.limit(10485760)))
     });
 
     server = match listenfd.take_tcp_listener(0)? {
