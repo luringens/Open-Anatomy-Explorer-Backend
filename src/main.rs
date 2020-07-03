@@ -78,8 +78,8 @@ async fn main() -> std::io::Result<()> {
                     .show_files_listing()
                     .files_listing_renderer(files),
             )
-            .app_data(web::Json::<LabelPoint>::configure(|cfg| cfg.limit(10485760)))
-            .app_data(web::Json::<Quiz>::configure(|cfg| cfg.limit(10485760)))
+            .app_data(web::Json::<LabelPoint>::configure(|cfg| cfg.limit(2097152)))
+            .app_data(web::Json::<Quiz>::configure(|cfg| cfg.limit(2097152)))
     });
 
     server = match listenfd.take_tcp_listener(0)? {

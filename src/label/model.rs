@@ -6,7 +6,7 @@ pub struct LabelPoint {
     pub color: String,
     pub name: String,
     pub model: String,
-    pub vertices: Vec<u32>,
+    pub vertices: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
