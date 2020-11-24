@@ -6,6 +6,7 @@ pub struct Quiz {
     pub questions: Vec<Question>,
     pub model: String,
     pub label_id: String,
+    pub shuffle: bool,
 }
 
 #[serde(rename_all = "camelCase")]
