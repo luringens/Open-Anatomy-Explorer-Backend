@@ -1,0 +1,7 @@
+CREATE TABLE labelsets
+(
+    id INTEGER PRIMARY KEY NOT NULL,
+    uuid TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    model INTEGER NOT NULL
+)

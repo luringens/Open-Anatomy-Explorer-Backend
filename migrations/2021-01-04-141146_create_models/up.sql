@@ -1,0 +1,5 @@
+CREATE TABLE models
+(
+    id INTEGER PRIMARY KEY NOT NULL,
+    filename TEXT UNIQUE NOT NULL
+)

@@ -6,7 +6,7 @@ extern crate diesel;
 
 use rocket::routes;
 use rocket_contrib::{database, serve::StaticFiles};
-mod labelpoint;
+mod labels;
 mod models;
 mod quiz;
 mod schema;
@@ -55,17 +55,12 @@ fn main() {
     rocket::ignite()
         .attach(MainDbConn::fairing())
         .mount(
-            "/Quiz",
+            "/quiz",
             routes![quiz::load, quiz::create, quiz::delete, quiz::put],
         )
         .mount(
-            "/LabelPoints",
-            routes![
-                labelpoint::create,
-                labelpoint::load,
-                labelpoint::put,
-                labelpoint::delete
-            ],
+            "/labels",
+            routes![labels::create, labels::load, labels::put, labels::delete],
         )
         .mount(
             "/models",
