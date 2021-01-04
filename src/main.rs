@@ -1,15 +1,25 @@
 #![feature(decl_macro)]
 
-use rocket::routes;
-use rocket_contrib::serve::StaticFiles;
+// Bulk macro imports for the schema module.
+#[macro_use]
+extern crate diesel;
 
+use rocket::routes;
+use rocket_contrib::{database, serve::StaticFiles};
 mod labelpoint;
+mod models;
 mod quiz;
+mod schema;
+mod users;
 mod util;
+
+#[database("sqlite_db")]
+pub struct MainDbConn(diesel::SqliteConnection);
 
 fn main() {
     // Load environment variable from `.env` if present
     dotenv::dotenv().ok();
+    sodiumoxide::init().expect("Failed to initialize sodiumoxide`.");
 
     // Confirm all required environment variables are present and the directories exist.
     {
@@ -43,6 +53,7 @@ fn main() {
 
     // Mount paths and cors fairing and launch the application.
     rocket::ignite()
+        .attach(MainDbConn::fairing())
         .mount(
             "/Quiz",
             routes![quiz::load, quiz::create, quiz::delete, quiz::put],
@@ -61,6 +72,7 @@ fn main() {
             StaticFiles::from(std::env::var("MODELS_DIR").unwrap()).rank(isize::max_value()),
         )
         .mount("/models", routes![models_index])
+        .mount("/users", routes![users::login, users::create])
         .attach(cors)
         .launch();
 }
