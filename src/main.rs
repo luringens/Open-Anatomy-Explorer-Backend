@@ -4,7 +4,6 @@ use rocket::routes;
 use rocket_contrib::serve::StaticFiles;
 
 mod labelpoint;
-mod models;
 mod quiz;
 mod util;
 

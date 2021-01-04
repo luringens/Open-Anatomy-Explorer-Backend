@@ -1,8 +1,25 @@
 use crate::util;
-use crate::{models::LabelPoint, util::json_path};
+use crate::util::json_path;
 use rocket::{delete, get, post, put};
 use rocket_contrib::{json::Json, uuid::Uuid};
+use serde::{Deserialize, Serialize};
 use std::{env, error::Error};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LabelPoint {
+    pub id: i32,
+    pub color: String,
+    pub name: String,
+    pub model: String,
+    pub vertices: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Vector {
+    pub x: f64,
+    pub y: f64,
+    pub z: Option<f64>,
+}
 
 #[post("/", format = "json", data = "<data>")]
 pub fn create(data: Json<Vec<LabelPoint>>) -> Result<Json<String>, Box<dyn Error>> {
