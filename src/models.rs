@@ -75,3 +75,41 @@ pub struct UserLabelSet {
     pub userid: i32,
     pub labelset: i32,
 }
+
+#[derive(Queryable)]
+pub struct Quiz {
+    pub id: i32,
+    pub uuid: String,
+    pub labelset: i32,
+    pub shuffle: i16,
+}
+
+#[derive(Insertable)]
+#[table_name = "quizzes"]
+pub struct NewQuiz<'a> {
+    pub uuid: &'a str,
+    pub labelset: i32,
+    pub shuffle: i16,
+}
+
+#[derive(Queryable, Debug)]
+pub struct Question {
+    pub id: i32,
+    pub quiz: i32,
+    pub questiontype: i16,
+    pub textprompt: String,
+    pub textanswer: Option<String>,
+    pub label: Option<i32>,
+    pub showregions: i16,
+}
+
+#[derive(Insertable)]
+#[table_name = "questions"]
+pub struct NewQuestion<'a> {
+    pub quiz: i32,
+    pub questiontype: i16,
+    pub textprompt: &'a str,
+    pub textanswer: Option<&'a str>,
+    pub label: Option<i32>,
+    pub showregions: i16,
+}

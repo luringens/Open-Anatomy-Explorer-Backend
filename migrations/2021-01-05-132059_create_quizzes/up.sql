@@ -1,0 +1,7 @@
+CREATE TABLE quizzes
+(
+    id INTEGER PRIMARY KEY NOT NULL,
+    uuid TEXT UNIQUE NOT NULL,
+    labelset INTEGER NOT NULL,
+    shuffle SMALLINT NOT NULL
+);
