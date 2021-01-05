@@ -37,12 +37,13 @@ fn main() {
     }
 
     // Set up CORS as this API will be called from other pages.
-    let mut allowed_origins = vec!["http://localhost:*".to_owned()];
+    let mut allowed_origins = vec![r"^http://localhost\..*".to_owned()];
     if let Ok(cors) = std::env::var("CORS") {
         allowed_origins.push(cors);
     }
     let cors = rocket_cors::CorsOptions::default()
         .allowed_origins(rocket_cors::AllowedOrigins::some_regex(&allowed_origins))
+        .allow_credentials(true)
         .to_cors()
         .expect("Failed to initialize CORS.");
 

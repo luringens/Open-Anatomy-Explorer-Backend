@@ -6,12 +6,17 @@ This backend must be configured through environment variables. For example:
 
 ```txt
 MODELS_DIR=./models
-CORS=http://example.com
+CORS=^https?:\/\/(\w+\.)*example\.com
 DATABASE_URL=db.sqlite
 ```
 
-If a different file than `db.sqlite` is wanted, make sure to reflect this in the provided
-`rocket.toml`.
+- Note that CORS is a regex string. It should be anchored by beginning with `^` to avoid
+  maliciousness. See the warning and spec in the
+  [Rocket documentation](https://docs.rs/rocket_cors/*/rocket_cors/type.AllowedOrigins.html) for
+  details.
+  - It will always allow CORS from `http(s)://localhost` for testing purposes.
+- If a different file than `db.sqlite` is wanted, make sure to reflect this in the provided
+  `rocket.toml`.
 
 ### Database
 
