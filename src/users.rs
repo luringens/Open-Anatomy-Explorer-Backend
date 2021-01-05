@@ -12,8 +12,8 @@ use serde::Deserialize;
 use sodiumoxide::crypto::pwhash::argon2id13;
 use std::error::Error;
 
-#[serde(rename_all = "camelCase")]
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Login {
     pub name: String,
     pub password: String,
@@ -76,6 +76,7 @@ pub fn create(conn: MainDbConn, data: Json<Login>) -> Result<(), Box<dyn Error>>
 }
 
 #[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JsonUserLabelSets {
     pub name: String,
     pub id: i32,

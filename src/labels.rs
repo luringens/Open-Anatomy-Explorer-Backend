@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct JsonLabelSet {
     pub name: String,
     pub model: i32,
@@ -34,6 +35,7 @@ impl JsonLabelSet {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct JsonLabel {
     pub colour: String,
     pub name: String,
