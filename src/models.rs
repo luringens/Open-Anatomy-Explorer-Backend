@@ -29,6 +29,12 @@ pub struct Model {
     pub filename: String,
 }
 
+#[derive(Insertable)]
+#[table_name = "models"]
+pub struct NewModel<'a> {
+    pub filename: &'a str,
+}
+
 #[derive(Queryable, Clone)]
 pub struct LabelSet {
     pub id: i32,

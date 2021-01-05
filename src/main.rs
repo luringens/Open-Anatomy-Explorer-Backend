@@ -9,6 +9,7 @@ use rocket_contrib::{database, serve::StaticFiles};
 mod authentication;
 mod labels;
 mod models;
+mod modelstorage;
 mod quiz;
 mod schema;
 mod users;
@@ -68,6 +69,7 @@ fn main() {
             StaticFiles::from(std::env::var("MODELS_DIR").unwrap()).rank(isize::max_value()),
         )
         .mount("/models", routes![models_index])
+        .mount("/modelstorage", routes![modelstorage::upload])
         .mount(
             "/users",
             routes![users::login, users::logout, users::create],
