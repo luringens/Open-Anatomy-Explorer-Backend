@@ -25,6 +25,13 @@ table! {
 }
 
 table! {
+    userlabelsets (userid, labelset) {
+        userid -> Integer,
+        labelset -> Integer,
+    }
+}
+
+table! {
     users (id) {
         id -> Integer,
         username -> Text,
@@ -37,5 +44,6 @@ allow_tables_to_appear_in_same_query!(
     labels,
     labelsets,
     models,
+    userlabelsets,
     users,
 );

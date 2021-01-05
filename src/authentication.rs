@@ -6,7 +6,7 @@ use rocket::{
     request::{self, FromRequest, Outcome, Request},
 };
 
-pub struct User(models::User);
+pub struct User(pub models::User);
 
 impl<'a, 'r> FromRequest<'a, 'r> for &'a User {
     type Error = !;
@@ -35,7 +35,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a User {
     }
 }
 
-pub struct Admin(models::User);
+pub struct Admin(pub models::User);
 
 impl<'a, 'r> FromRequest<'a, 'r> for Admin {
     type Error = !;

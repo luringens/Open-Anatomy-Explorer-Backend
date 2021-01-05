@@ -68,3 +68,10 @@ pub struct NewLabel<'a> {
     pub colour: &'a str,
     pub vertices: &'a [u8],
 }
+
+#[derive(Queryable, Clone, Insertable)]
+#[table_name = "userlabelsets"]
+pub struct UserLabelSet {
+    pub userid: i32,
+    pub labelset: i32,
+}

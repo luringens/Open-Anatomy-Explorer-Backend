@@ -72,7 +72,14 @@ fn main() {
         .mount("/modelstorage", routes![modelstorage::upload])
         .mount(
             "/users",
-            routes![users::login, users::logout, users::create],
+            routes![
+                users::login,
+                users::logout,
+                users::create,
+                users::get_labelsets,
+                users::add_labelset,
+                users::delete_labelset
+            ],
         )
         .attach(cors)
         .launch();
