@@ -1,7 +1,10 @@
 use super::schema::*;
-use crate::{schema, MainDbConn};
+use crate::{authentication, schema, MainDbConn};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
-use rocket::{post, put};
+use rocket::{
+    http::{Cookie, Cookies},
+    post, put,
+};
 use rocket_contrib::json::Json;
 use serde::Deserialize;
 use sodiumoxide::crypto::pwhash::argon2id13;
@@ -15,7 +18,11 @@ pub struct Login {
 }
 
 #[post("/login", format = "json", data = "<data>")]
-pub fn login(conn: MainDbConn, data: Json<Login>) -> Result<(), Box<dyn Error>> {
+pub fn login(
+    conn: MainDbConn,
+    mut cookies: Cookies,
+    data: Json<Login>,
+) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let results = users
@@ -32,6 +39,15 @@ pub fn login(conn: MainDbConn, data: Json<Login>) -> Result<(), Box<dyn Error>> 
         return Err("Incorrect password.".into());
     }
 
+    cookies.add_private(Cookie::new("user_id", user.id.to_string()));
+    Ok(())
+}
+
+#[post("/logout")]
+pub fn logout(_user: &authentication::User, mut cookies: Cookies) -> Result<(), !> {
+    if let Some(cookie) = cookies.get_private("user_id") {
+        cookies.remove_private(cookie);
+    }
     Ok(())
 }
 

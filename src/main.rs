@@ -1,4 +1,4 @@
-#![feature(decl_macro)]
+#![feature(decl_macro, never_type)]
 
 // Bulk macro imports for the schema module.
 #[macro_use]
@@ -6,6 +6,7 @@ extern crate diesel;
 
 use rocket::routes;
 use rocket_contrib::{database, serve::StaticFiles};
+mod authentication;
 mod labels;
 mod models;
 mod quiz;
@@ -67,7 +68,10 @@ fn main() {
             StaticFiles::from(std::env::var("MODELS_DIR").unwrap()).rank(isize::max_value()),
         )
         .mount("/models", routes![models_index])
-        .mount("/users", routes![users::login, users::create])
+        .mount(
+            "/users",
+            routes![users::login, users::logout, users::create],
+        )
         .attach(cors)
         .launch();
 }

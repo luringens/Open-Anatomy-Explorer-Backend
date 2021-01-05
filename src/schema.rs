@@ -29,6 +29,7 @@ table! {
         id -> Integer,
         username -> Text,
         password -> Binary,
+        privilege -> Integer,
     }
 }
 
