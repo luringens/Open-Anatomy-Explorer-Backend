@@ -21,26 +21,19 @@ pub struct MainDbConn(diesel::SqliteConnection);
 fn main() {
     // Load environment variable from `.env` if present
     dotenv::dotenv().ok();
+
+    // Initialize cryptography crate.
     sodiumoxide::init().expect("Failed to initialize sodiumoxide`.");
 
-    // Confirm all required environment variables are present and the directories exist.
-    {
-        const REQUIRED_ENV: [&'static str; 3] = ["QUIZ_DATA_DIR", "LABEL_DATA_DIR", "MODELS_DIR"];
-        let mut missing_env = false;
-        for env in REQUIRED_ENV.iter() {
-            if let Ok(path) = std::env::var(env) {
-                if let Err(e) = std::fs::create_dir_all(path) {
-                    missing_env = true;
-                    eprintln!("Path for '{}' could not be created: {:?}", env, e);
-                }
-            } else {
-                missing_env = true;
-                eprintln!("Missing environment variable '{}'", env);
-            }
-        }
-        if missing_env {
+    // Confirm the required environment variable are present and the directory exists.
+    if let Ok(path) = std::env::var("MODELS_DIR") {
+        if let Err(e) = std::fs::create_dir_all(path) {
+            eprintln!("Path for 'MODELS_DIR' could not be created: {:?}", e);
             return;
         }
+    } else {
+        eprintln!("Missing environment variable 'MODELS_DIR'");
+        return;
     }
 
     // Set up CORS as this API will be called from other pages.
