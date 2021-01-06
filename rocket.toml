@@ -3,4 +3,4 @@ port = 8001
 limits = { json = 15728640 } # 15 MiB
 
 [global.databases]
-sqlite_db = { url = "./db.sqlite" }
+sqlite_db = { url = "./db.sqlite", pool_size = 1 }
