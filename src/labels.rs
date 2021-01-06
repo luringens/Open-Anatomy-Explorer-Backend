@@ -74,7 +74,7 @@ pub fn put(
     uuid: Uuid,
     data: Json<JsonLabelSet>,
 ) -> Result<Json<String>, Box<dyn Error>> {
-    use crate::schema::labels::dsl::labels;
+    use crate::schema::labels::dsl::{self as labels_dsl, labels};
     use crate::schema::labelsets::dsl::{self as labelsets_dsl, labelsets};
 
     let data = data.into_inner();
@@ -82,7 +82,7 @@ pub fn put(
     let new_set = data.to_new_label_set(uuid.as_ref());
     let mut new_labels: Vec<_> = data.labels.iter().map(NewLabel::from).collect();
 
-    rocket_contrib::databases::diesel::insert_into(labelsets)
+    rocket_contrib::databases::diesel::replace_into(labelsets)
         .values(&new_set)
         .execute(&*conn)?;
 
@@ -98,6 +98,9 @@ pub fn put(
         .iter_mut()
         .for_each(|l| l.labelset = inserted_set.id);
 
+    rocket_contrib::databases::diesel::delete(labels)
+        .filter(labels_dsl::labelset.eq(&inserted_set.id))
+        .execute(&*conn)?;
     rocket_contrib::databases::diesel::insert_into(labels)
         .values(&new_labels)
         .execute(&*conn)?;

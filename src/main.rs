@@ -63,7 +63,10 @@ fn main() {
             StaticFiles::from(std::env::var("MODELS_DIR").unwrap()).rank(isize::max_value()),
         )
         .mount("/models", routes![models_index])
-        .mount("/modelstorage", routes![modelstorage::upload])
+        .mount(
+            "/modelstorage",
+            routes![modelstorage::upload, modelstorage::lookup],
+        )
         .mount(
             "/users",
             routes![

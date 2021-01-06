@@ -80,6 +80,7 @@ pub fn create(conn: MainDbConn, data: Json<Login>) -> Result<(), Box<dyn Error>>
 pub struct JsonUserLabelSets {
     pub name: String,
     pub id: i32,
+    pub uuid: String,
 }
 
 impl From<crate::models::LabelSet> for JsonUserLabelSets {
@@ -87,6 +88,7 @@ impl From<crate::models::LabelSet> for JsonUserLabelSets {
         Self {
             id: set.id,
             name: set.name,
+            uuid: set.uuid,
         }
     }
 }
