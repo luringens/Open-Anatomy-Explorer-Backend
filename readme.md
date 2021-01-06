@@ -14,7 +14,7 @@ DATABASE_URL=db.sqlite
   maliciousness. See the warning and spec in the
   [Rocket documentation](https://docs.rs/rocket_cors/*/rocket_cors/type.AllowedOrigins.html) for
   details.
-  - It will always allow CORS from `http(s)://localhost` for testing purposes.
+  - It will always allow CORS from `http(s)://localhost:xxxx` for testing purposes.
 - If a different file than `db.sqlite` is wanted, make sure to reflect this in the provided
   `rocket.toml`.
 
