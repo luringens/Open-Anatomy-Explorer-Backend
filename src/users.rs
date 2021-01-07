@@ -15,7 +15,7 @@ use std::error::Error;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Login {
-    pub name: String,
+    pub username: String,
     pub password: String,
 }
 
@@ -28,7 +28,7 @@ pub fn login(
     use schema::users::dsl::*;
 
     let results = users
-        .filter(username.eq(&data.name))
+        .filter(username.eq(&data.username))
         .load::<crate::models::User>(&*conn)?;
     let user = results.get(0).ok_or("Could not find user.")?;
 
@@ -64,7 +64,7 @@ pub fn create(conn: MainDbConn, data: Json<Login>) -> Result<(), Box<dyn Error>>
     .map_err(|_| "Failed to hash password.")?;
 
     let insert = super::models::NewUser {
-        username: data.name.as_ref(),
+        username: data.username.as_ref(),
         password: hash.as_ref(),
     };
 
