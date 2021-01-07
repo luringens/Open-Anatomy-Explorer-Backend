@@ -1,7 +1,7 @@
 use super::schema::*;
 use rocket_contrib::databases::diesel::{Insertable, Queryable};
 
-#[derive(Queryable, Clone)]
+#[derive(Queryable, Clone, Debug)]
 pub struct User {
     pub id: i32,
     pub username: String,
@@ -23,7 +23,7 @@ pub struct NewUser<'a> {
     pub password: &'a [u8],
 }
 
-#[derive(Queryable, Clone)]
+#[derive(Queryable, Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct Model {
     pub id: i32,
     pub filename: String,

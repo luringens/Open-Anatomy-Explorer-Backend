@@ -71,7 +71,11 @@ fn main() {
         .mount("/models", routes![models_index])
         .mount(
             "/modelstorage",
-            routes![modelstorage::upload, modelstorage::lookup],
+            routes![
+                modelstorage::upload,
+                modelstorage::lookup,
+                modelstorage::list
+            ],
         )
         .mount(
             "/users",
