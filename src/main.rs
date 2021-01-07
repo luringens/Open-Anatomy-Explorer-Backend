@@ -56,7 +56,13 @@ fn main() {
         )
         .mount(
             "/labels",
-            routes![labels::create, labels::load, labels::put, labels::delete],
+            routes![
+                labels::create,
+                labels::load,
+                labels::put,
+                labels::delete,
+                labels::load_by_uuid
+            ],
         )
         .mount(
             "/models",

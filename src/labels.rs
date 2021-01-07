@@ -11,6 +11,8 @@ use std::error::Error;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct JsonLabelSet {
+    pub id: Option<i32>,
+    pub uuid: Option<String>,
     pub name: String,
     pub model: i32,
     pub labels: Vec<JsonLabel>,
@@ -19,6 +21,8 @@ pub struct JsonLabelSet {
 impl JsonLabelSet {
     fn from_db(set: crate::models::LabelSet, labels: Vec<crate::models::Label>) -> Self {
         Self {
+            id: Some(set.id),
+            uuid: Some(set.uuid),
             name: set.name,
             model: set.model,
             labels: labels.into_iter().map(From::from).collect(),
@@ -108,8 +112,11 @@ pub fn put(
     Ok(Json(uuid))
 }
 
-#[get("/<uuid>")]
-pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
+#[get("/uuid/<uuid>")]
+pub fn load_by_uuid(
+    conn: MainDbConn,
+    uuid: Uuid,
+) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
 
@@ -117,6 +124,29 @@ pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<JsonLabelSet>>, 
     let labelset = labelsets_dsl::labelsets
         .filter(labelsets_dsl::uuid.eq(&uuid))
         .limit(1)
+        .load::<crate::models::LabelSet>(&*conn)?
+        .pop();
+
+    let labelset = match labelset {
+        Some(l) => l,
+        None => return Ok(None),
+    };
+
+    let labels: Vec<crate::models::Label> = labels_dsl::labels
+        .filter(labels_dsl::labelset.eq(&labelset.id))
+        .load::<crate::models::Label>(&*conn)?;
+
+    let result = JsonLabelSet::from_db(labelset, labels);
+    Ok(Some(Json(result)))
+}
+
+#[get("/<id>")]
+pub fn load(conn: MainDbConn, id: i32) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
+    use crate::schema::labels::dsl as labels_dsl;
+    use crate::schema::labelsets::dsl as labelsets_dsl;
+
+    let labelset = labelsets_dsl::labelsets
+        .find(&id)
         .load::<crate::models::LabelSet>(&*conn)?
         .pop();
 

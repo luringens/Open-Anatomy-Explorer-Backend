@@ -11,15 +11,15 @@ use std::error::Error;
 
 #[serde(rename_all = "camelCase")]
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Quiz {
-    pub label_set: String,
+pub struct JsonQuiz {
+    pub label_set: i32,
     pub shuffle: bool,
-    pub questions: Vec<Question>,
+    pub questions: Vec<JsonQuestion>,
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Question {
+pub struct JsonQuestion {
     pub question_type: i16,
     pub text_prompt: String,
     pub text_answer: Option<String>,
@@ -27,10 +27,10 @@ pub struct Question {
     pub show_regions: Option<bool>,
 }
 
-impl Quiz {
-    pub fn to_db_quiz<'a>(&self, uuid: &'a str, label_set_id: i32) -> models::NewQuiz<'a> {
+impl JsonQuiz {
+    pub fn to_db_quiz<'a>(&self, uuid: &'a str) -> models::NewQuiz<'a> {
         models::NewQuiz {
-            labelset: label_set_id,
+            labelset: self.label_set,
             shuffle: self.shuffle as i16,
             uuid,
         }
@@ -51,14 +51,27 @@ impl Quiz {
     }
 }
 
-impl From<(models::Quiz, Vec<models::Question>)> for Quiz {
-    fn from(_: (models::Quiz, Vec<models::Question>)) -> Self {
-        todo!()
+impl From<(models::Quiz, Vec<models::Question>)> for JsonQuiz {
+    fn from((quiz, questions): (models::Quiz, Vec<models::Question>)) -> Self {
+        JsonQuiz {
+            label_set: quiz.labelset,
+            shuffle: quiz.shuffle != 0,
+            questions: questions
+                .into_iter()
+                .map(|q| JsonQuestion {
+                    question_type: q.questiontype,
+                    text_prompt: q.textprompt,
+                    text_answer: q.textanswer,
+                    label_id: q.label,
+                    show_regions: Some(q.showregions != 0),
+                })
+                .collect(),
+        }
     }
 }
 
 #[get("/<uuid>")]
-pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<Quiz>>, Box<dyn Error>> {
+pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<JsonQuiz>>, Box<dyn Error>> {
     let quiz = quizzes_dsl::quizzes
         .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
         .limit(1)
@@ -78,7 +91,10 @@ pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<Quiz>>, Box<dyn 
 }
 
 #[post("/", format = "json", data = "<data>")]
-pub fn create(conn: MainDbConn, data: Json<Quiz>) -> Result<Option<Json<String>>, Box<dyn Error>> {
+pub fn create(
+    conn: MainDbConn,
+    data: Json<JsonQuiz>,
+) -> Result<Option<Json<String>>, Box<dyn Error>> {
     put(conn, util::create_uuid(), data)
 }
 
@@ -86,26 +102,39 @@ pub fn create(conn: MainDbConn, data: Json<Quiz>) -> Result<Option<Json<String>>
 pub fn put(
     conn: MainDbConn,
     uuid: Uuid,
-    data: Json<Quiz>,
+    data: Json<JsonQuiz>,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
     use crate::schema::labelsets::dsl as labelset_dsl;
 
     let quiz = data.into_inner();
     let uuid = uuid.to_string();
 
+    // Make sure the label set exists.
     let label_set = labelset_dsl::labelsets
-        .filter(labelset_dsl::uuid.eq(&uuid))
-        .limit(1)
+        .find(&quiz.label_set)
         .load::<crate::models::LabelSet>(&*conn)?
         .pop();
-
-    let label_set_id = if let Some(set) = label_set {
-        set.id
-    } else {
+    if label_set.is_none() {
         return Ok(None);
-    };
+    }
 
-    let dbquiz = quiz.to_db_quiz(&uuid, label_set_id);
+    // Delete previous if present.
+    let previous_id: Option<i32> = quizzes_dsl::quizzes
+        .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
+        .limit(1)
+        .load::<crate::models::Quiz>(&*conn)?
+        .pop()
+        .map(|quiz| quiz.id);
+    if let Some(previous_id) = previous_id {
+        rocket_contrib::databases::diesel::delete(quizzes_dsl::quizzes)
+            .filter(quizzes_dsl::id.eq(&previous_id))
+            .execute(&*conn)?;
+        rocket_contrib::databases::diesel::delete(questions_dsl::questions)
+            .filter(questions_dsl::quiz.eq(&previous_id))
+            .execute(&*conn)?;
+    }
+
+    let dbquiz = quiz.to_db_quiz(&uuid);
     rocket_contrib::databases::diesel::insert_into(quizzes_dsl::quizzes)
         .values(&dbquiz)
         .execute(&*conn)?;
