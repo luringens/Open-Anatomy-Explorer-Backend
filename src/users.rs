@@ -131,9 +131,9 @@ impl From<crate::models::LabelSet> for JsonUserLabelSets {
 
 #[put("/labelsets/<uuid>")]
 pub fn add_labelset(
-    conn: MainDbConn,
     uuid: Uuid,
     user: &authentication::User,
+    conn: MainDbConn,
 ) -> Result<Option<()>, Box<dyn Error>> {
     let set = schema::labelsets::dsl::labelsets
         .filter(schema::labelsets::dsl::uuid.eq(&uuid.to_string()))
@@ -159,9 +159,9 @@ pub fn add_labelset(
 
 #[delete("/labelsets/<uuid>")]
 pub fn delete_labelset(
-    conn: MainDbConn,
     uuid: Uuid,
     user: &authentication::User,
+    conn: MainDbConn,
 ) -> Result<Option<()>, Box<dyn Error>> {
     use schema::userlabelsets::dsl::{labelset, userid};
 
@@ -190,8 +190,8 @@ pub fn delete_labelset(
 
 #[get("/labelsets")]
 pub fn get_labelsets(
-    conn: MainDbConn,
     user: &authentication::User,
+    conn: MainDbConn,
 ) -> Result<Json<Vec<JsonUserLabelSets>>, Box<dyn Error>> {
     let set_ids: Vec<_> = schema::userlabelsets::dsl::userlabelsets
         .filter(schema::userlabelsets::dsl::userid.eq(&user.0.id))
