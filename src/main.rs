@@ -83,6 +83,8 @@ fn main() {
                 users::login,
                 users::logout,
                 users::create,
+                users::refresh_session_user,
+                users::refresh_session_loggedout,
                 users::get_labelsets,
                 users::add_labelset,
                 users::delete_labelset
