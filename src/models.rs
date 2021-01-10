@@ -46,6 +46,7 @@ pub struct LabelSet {
 #[derive(Insertable)]
 #[table_name = "labelsets"]
 pub struct NewLabelSet<'a> {
+    pub id: Option<i32>,
     pub uuid: &'a str,
     pub name: &'a str,
     pub model: i32,
@@ -87,6 +88,7 @@ pub struct Quiz {
 #[derive(Insertable)]
 #[table_name = "quizzes"]
 pub struct NewQuiz<'a> {
+    pub id: Option<i32>,
     pub uuid: &'a str,
     pub labelset: i32,
     pub shuffle: i16,

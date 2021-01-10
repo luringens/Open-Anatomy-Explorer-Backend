@@ -5,7 +5,7 @@ use rocket_contrib::json::Json;
 use std::{error::Error, io::Read};
 
 const MIB: u64 = 1024u64.pow(2);
-const UPLOAD_SIZE_LIMIT: u64 = 50 * MIB;
+const UPLOAD_SIZE_LIMIT: u64 = 75 * MIB;
 
 #[put("/upload/<filename>", data = "<data>")]
 pub fn upload(

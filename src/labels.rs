@@ -31,6 +31,7 @@ impl JsonLabelSet {
 
     fn to_new_label_set<'a>(&'a self, uuid: &'a str) -> NewLabelSet<'a> {
         NewLabelSet {
+            id: self.id,
             name: self.name.as_ref(),
             model: self.model,
             uuid,
@@ -83,27 +84,40 @@ pub fn put(
 
     let data = data.into_inner();
     let uuid = (&uuid).to_string();
-    let new_set = data.to_new_label_set(uuid.as_ref());
+    let mut new_set = data.to_new_label_set(uuid.as_ref());
     let mut new_labels: Vec<_> = data.labels.iter().map(NewLabel::from).collect();
+
+    // Check if it's already in the database, and if so, use it's ID.
+    let set_id = data.id.or_else(|| {
+        labelsets_dsl::labelsets
+            .filter(labelsets_dsl::uuid.eq(&uuid))
+            .load::<crate::models::LabelSet>(&*conn)
+            .ok()
+            .map(|mut sets| sets.pop().map(|set| set.id))
+            .flatten()
+    });
+    new_set.id = set_id;
 
     rocket_contrib::databases::diesel::replace_into(labelsets)
         .values(&new_set)
         .execute(&*conn)?;
 
-    // Get the ID for the inserted set to apply to the labels.
-    let inserted_set = labelsets_dsl::labelsets
-        .filter(labelsets_dsl::uuid.eq(&uuid))
-        .limit(1)
-        .load::<crate::models::LabelSet>(&*conn)?
-        .pop()
+    // If we didn't previously get the ID for the set, retrieve it now to apply to the labels.
+    let set_id = set_id
+        .or_else(|| {
+            labelsets_dsl::labelsets
+                .filter(labelsets_dsl::uuid.eq(&uuid))
+                .load::<crate::models::LabelSet>(&*conn)
+                .ok()
+                .map(|mut sets| sets.pop().map(|set| set.id))
+                .flatten()
+        })
         .ok_or("Can't find set that was just inserted.")?;
 
-    new_labels
-        .iter_mut()
-        .for_each(|l| l.labelset = inserted_set.id);
+    new_labels.iter_mut().for_each(|l| l.labelset = set_id);
 
     rocket_contrib::databases::diesel::delete(labels)
-        .filter(labels_dsl::labelset.eq(&inserted_set.id))
+        .filter(labels_dsl::labelset.eq(&set_id))
         .execute(&*conn)?;
     rocket_contrib::databases::diesel::insert_into(labels)
         .values(&new_labels)

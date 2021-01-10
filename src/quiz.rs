@@ -12,6 +12,7 @@ use std::error::Error;
 #[serde(rename_all = "camelCase")]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JsonQuiz {
+    pub id: Option<i32>,
     pub label_set: i32,
     pub shuffle: bool,
     pub questions: Vec<JsonQuestion>,
@@ -30,6 +31,7 @@ pub struct JsonQuestion {
 impl JsonQuiz {
     pub fn to_db_quiz<'a>(&self, uuid: &'a str) -> models::NewQuiz<'a> {
         models::NewQuiz {
+            id: self.id,
             labelset: self.label_set,
             shuffle: self.shuffle as i16,
             uuid,
@@ -54,6 +56,7 @@ impl JsonQuiz {
 impl From<(models::Quiz, Vec<models::Question>)> for JsonQuiz {
     fn from((quiz, questions): (models::Quiz, Vec<models::Question>)) -> Self {
         JsonQuiz {
+            id: Some(quiz.id),
             label_set: quiz.labelset,
             shuffle: quiz.shuffle != 0,
             questions: questions
@@ -118,35 +121,43 @@ pub fn put(
         return Ok(None);
     }
 
-    // Delete previous if present.
-    let previous_id: Option<i32> = quizzes_dsl::quizzes
-        .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
-        .limit(1)
-        .load::<crate::models::Quiz>(&*conn)?
-        .pop()
-        .map(|quiz| quiz.id);
+    // Check if there's a previous ID to overwrite..
+    let previous_id: Option<i32> = quiz.id.or_else(|| {
+        quizzes_dsl::quizzes
+            .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
+            .limit(1)
+            .load::<crate::models::Quiz>(&*conn)
+            .ok()
+            .map(|mut sets| sets.pop().map(|set| set.id))
+            .flatten()
+    });
+
     if let Some(previous_id) = previous_id {
-        rocket_contrib::databases::diesel::delete(quizzes_dsl::quizzes)
-            .filter(quizzes_dsl::id.eq(&previous_id))
-            .execute(&*conn)?;
         rocket_contrib::databases::diesel::delete(questions_dsl::questions)
             .filter(questions_dsl::quiz.eq(&previous_id))
             .execute(&*conn)?;
     }
 
-    let dbquiz = quiz.to_db_quiz(&uuid);
+    let mut dbquiz = quiz.to_db_quiz(&uuid);
+    dbquiz.id = previous_id;
     rocket_contrib::databases::diesel::insert_into(quizzes_dsl::quizzes)
         .values(&dbquiz)
         .execute(&*conn)?;
 
-    // Get the ID for the inserted set to apply to the questions.
-    let inserted_quiz = quizzes_dsl::quizzes
-        .limit(1)
-        .load::<crate::models::Quiz>(&*conn)?
-        .pop()
+    // Get the ID for the inserted set if needed to apply to the questions.
+    let previous_id = previous_id
+        .or_else(|| {
+            quizzes_dsl::quizzes
+                .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
+                .limit(1)
+                .load::<crate::models::Quiz>(&*conn)
+                .ok()
+                .map(|mut sets| sets.pop().map(|set| set.id))
+                .flatten()
+        })
         .ok_or("Can't find quiz that was just inserted.")?;
 
-    let questions = quiz.to_db_questions(inserted_quiz.id);
+    let questions = quiz.to_db_questions(previous_id);
 
     rocket_contrib::databases::diesel::insert_into(questions_dsl::questions)
         .values(&questions)
