@@ -29,11 +29,16 @@ pub fn login(
     conn: MainDbConn,
     mut cookies: Cookies,
     data: Json<Login>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<Status, Box<dyn Error>> {
     let results = users
         .filter(username.eq(&data.username))
         .load::<crate::models::User>(&*conn)?;
-    let user = results.get(0).ok_or("Could not find user.")?;
+
+    let user = if let Some(user) = results.get(0) {
+        user
+    } else {
+        return Ok(Status::Unauthorized);
+    };
 
     sodiumoxide::init().map_err(|_| "Failed to init sodiumoxide.")?;
     let hash = argon2id13::HashedPassword::from_slice(&user.password)
@@ -41,11 +46,11 @@ pub fn login(
     let password_matches = argon2id13::pwhash_verify(&hash, data.password.as_bytes());
 
     if !password_matches {
-        return Err("Incorrect password.".into());
+        return Ok(Status::Unauthorized);
     }
 
     add_login_cookie(&mut cookies, user.id);
-    Ok(())
+    Ok(Status::Ok)
 }
 
 #[post("/logout")]
