@@ -1,20 +1,20 @@
 use crate::{
     authentication,
-    diesel::BoolExpressionMethods,
-    models::UserLabelSet,
     schema::{self, users::dsl::*},
     MainDbConn,
 };
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use rocket::{
-    delete, get,
     http::{Cookie, Cookies},
     post, put,
 };
-use rocket_contrib::{json::Json, uuid::Uuid};
+use rocket_contrib::json::Json;
 use serde::Deserialize;
 use sodiumoxide::crypto::pwhash::argon2id13;
 use std::error::Error;
+
+pub mod labelsets;
+pub mod quizzes;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -109,103 +109,4 @@ fn remove_login_cookie(cookies: &mut Cookies) {
     if let Some(cookie) = cookies.get_private("user_id") {
         cookies.remove_private(cookie);
     }
-}
-
-#[derive(Debug, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct JsonUserLabelSets {
-    pub name: String,
-    pub id: i32,
-    pub uuid: String,
-}
-
-impl From<crate::models::LabelSet> for JsonUserLabelSets {
-    fn from(set: crate::models::LabelSet) -> Self {
-        Self {
-            id: set.id,
-            name: set.name,
-            uuid: set.uuid,
-        }
-    }
-}
-
-#[put("/labelsets/<uuid>")]
-pub fn add_labelset(
-    uuid: Uuid,
-    user: &authentication::User,
-    conn: MainDbConn,
-) -> Result<Option<()>, Box<dyn Error>> {
-    let set = schema::labelsets::dsl::labelsets
-        .filter(schema::labelsets::dsl::uuid.eq(&uuid.to_string()))
-        .limit(1)
-        .load::<crate::models::LabelSet>(&*conn)?
-        .pop();
-    if set.is_none() {
-        return Ok(None);
-    }
-    let set = set.unwrap();
-
-    let data = UserLabelSet {
-        userid: user.0.id,
-        labelset: set.id,
-    };
-
-    rocket_contrib::databases::diesel::insert_into(schema::userlabelsets::table)
-        .values(&data)
-        .execute(&*conn)?;
-
-    Ok(Some(()))
-}
-
-#[delete("/labelsets/<uuid>")]
-pub fn delete_labelset(
-    uuid: Uuid,
-    user: &authentication::User,
-    conn: MainDbConn,
-) -> Result<Option<()>, Box<dyn Error>> {
-    use schema::userlabelsets::dsl::{labelset, userid};
-
-    let set = schema::labelsets::dsl::labelsets
-        .filter(schema::labelsets::dsl::uuid.eq(&uuid.to_string()))
-        .limit(1)
-        .load::<crate::models::LabelSet>(&*conn)?
-        .pop();
-    if set.is_none() {
-        return Ok(None);
-    }
-    let set = set.unwrap();
-
-    let filter1 = labelset.eq(&set.id);
-    let filter2 = userid.eq(&user.0.id);
-    let deleted = rocket_contrib::databases::diesel::delete(schema::userlabelsets::table)
-        .filter(filter1.and(filter2))
-        .execute(&*conn)?;
-
-    match deleted {
-        0 => Ok(None),
-        1 => Ok(Some(())),
-        n => Err(format!("Expected 1 deleted userset, but deleted {}!", n).into()),
-    }
-}
-
-#[get("/labelsets")]
-pub fn get_labelsets(
-    user: &authentication::User,
-    conn: MainDbConn,
-) -> Result<Json<Vec<JsonUserLabelSets>>, Box<dyn Error>> {
-    let set_ids: Vec<_> = schema::userlabelsets::dsl::userlabelsets
-        .filter(schema::userlabelsets::dsl::userid.eq(&user.0.id))
-        .load::<crate::models::UserLabelSet>(&*conn)?
-        .into_iter()
-        .map(|uls| uls.labelset)
-        .collect();
-
-    let result: Vec<_> = schema::labelsets::dsl::labelsets
-        .filter(schema::labelsets::dsl::id.eq_any(&set_ids))
-        .load::<crate::models::LabelSet>(&*conn)?
-        .into_iter()
-        .map(From::from)
-        .collect();
-
-    Ok(Json(result))
 }

@@ -61,7 +61,7 @@ fn main() {
                 labels::load,
                 labels::put,
                 labels::delete,
-                labels::load_by_uuid
+                labels::load_by_uuid,
             ],
         )
         .mount(
@@ -74,7 +74,23 @@ fn main() {
             routes![
                 modelstorage::upload,
                 modelstorage::lookup,
-                modelstorage::list
+                modelstorage::list,
+            ],
+        )
+        .mount(
+            "/users/quizzes",
+            routes![
+                users::quizzes::get,
+                users::quizzes::add,
+                users::quizzes::delete,
+            ],
+        )
+        .mount(
+            "/users/labelsets",
+            routes![
+                users::labelsets::get,
+                users::labelsets::add,
+                users::labelsets::delete,
             ],
         )
         .mount(
@@ -85,9 +101,6 @@ fn main() {
                 users::create,
                 users::refresh_session_user,
                 users::refresh_session_loggedout,
-                users::get_labelsets,
-                users::add_labelset,
-                users::delete_labelset
             ],
         )
         .attach(cors)

@@ -77,10 +77,18 @@ pub struct UserLabelSet {
     pub labelset: i32,
 }
 
+#[derive(Queryable, Clone, Insertable)]
+#[table_name = "userquizzes"]
+pub struct UserQuiz {
+    pub userid: i32,
+    pub quiz: i32,
+}
+
 #[derive(Queryable)]
 pub struct Quiz {
     pub id: i32,
     pub uuid: String,
+    pub name: String,
     pub labelset: i32,
     pub shuffle: i16,
 }
@@ -90,6 +98,7 @@ pub struct Quiz {
 pub struct NewQuiz<'a> {
     pub id: Option<i32>,
     pub uuid: &'a str,
+    pub name: &'a str,
     pub labelset: i32,
     pub shuffle: i16,
 }

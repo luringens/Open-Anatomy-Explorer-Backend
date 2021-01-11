@@ -40,6 +40,7 @@ table! {
     quizzes (id) {
         id -> Integer,
         uuid -> Text,
+        name -> Text,
         labelset -> Integer,
         shuffle -> SmallInt,
     }
@@ -49,6 +50,13 @@ table! {
     userlabelsets (userid, labelset) {
         userid -> Integer,
         labelset -> Integer,
+    }
+}
+
+table! {
+    userquizzes (userid, quiz) {
+        userid -> Integer,
+        quiz -> Integer,
     }
 }
 
@@ -68,5 +76,6 @@ allow_tables_to_appear_in_same_query!(
     questions,
     quizzes,
     userlabelsets,
+    userquizzes,
     users,
 );

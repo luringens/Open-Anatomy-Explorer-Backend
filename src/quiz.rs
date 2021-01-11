@@ -13,6 +13,7 @@ use std::error::Error;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JsonQuiz {
     pub id: Option<i32>,
+    pub name: String,
     pub label_set: i32,
     pub shuffle: bool,
     pub questions: Vec<JsonQuestion>,
@@ -29,11 +30,12 @@ pub struct JsonQuestion {
 }
 
 impl JsonQuiz {
-    pub fn to_db_quiz<'a>(&self, uuid: &'a str) -> models::NewQuiz<'a> {
+    pub fn to_db_quiz<'a>(&'a self, uuid: &'a str) -> models::NewQuiz<'a> {
         models::NewQuiz {
             id: self.id,
             labelset: self.label_set,
             shuffle: self.shuffle as i16,
+            name: self.name.as_ref(),
             uuid,
         }
     }
@@ -58,6 +60,7 @@ impl From<(models::Quiz, Vec<models::Question>)> for JsonQuiz {
         JsonQuiz {
             id: Some(quiz.id),
             label_set: quiz.labelset,
+            name: quiz.name,
             shuffle: quiz.shuffle != 0,
             questions: questions
                 .into_iter()
