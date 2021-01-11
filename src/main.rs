@@ -99,6 +99,8 @@ fn main() {
                 users::login,
                 users::logout,
                 users::create,
+                users::is_admin,
+                users::is_not_admin,
                 users::refresh_session_user,
                 users::refresh_session_loggedout,
             ],

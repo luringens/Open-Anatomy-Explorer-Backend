@@ -5,6 +5,7 @@ use crate::{
 };
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use rocket::{
+    get,
     http::{Cookie, Cookies},
     post, put,
 };
@@ -83,6 +84,16 @@ pub fn create(
 
     add_login_cookie(&mut cookies, user.id);
     Ok(())
+}
+
+#[get("/isadmin", rank = 1)]
+pub fn is_admin(_user: authentication::Admin) -> Result<Json<bool>, !> {
+    return Ok(Json(true));
+}
+
+#[get("/isadmin", rank = 2)]
+pub fn is_not_admin(_user: &authentication::User) -> Result<Json<bool>, !> {
+    return Ok(Json(false));
 }
 
 #[post("/refresh", rank = 1)]
