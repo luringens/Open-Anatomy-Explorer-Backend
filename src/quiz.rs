@@ -143,7 +143,7 @@ pub fn put(
 
     let mut dbquiz = quiz.to_db_quiz(&uuid);
     dbquiz.id = previous_id;
-    rocket_contrib::databases::diesel::insert_into(quizzes_dsl::quizzes)
+    rocket_contrib::databases::diesel::replace_into(quizzes_dsl::quizzes)
         .values(&dbquiz)
         .execute(&*conn)?;
 
