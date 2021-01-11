@@ -49,7 +49,7 @@ pub fn login(
 }
 
 #[post("/logout")]
-pub fn logout(_user: &authentication::User, mut cookies: Cookies) -> Result<(), !> {
+pub fn logout(mut cookies: Cookies) -> Result<(), !> {
     remove_login_cookie(&mut cookies);
     Ok(())
 }
