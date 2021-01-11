@@ -171,6 +171,7 @@ pub fn put(
 
 #[delete("/<uuid>")]
 pub fn delete(conn: MainDbConn, uuid: Uuid) -> Result<Option<()>, Box<dyn Error>> {
+    use crate::schema::userquizzes::dsl as user_quizzes_dsl;
     let uuid = uuid.to_string();
     let quiz = quizzes_dsl::quizzes
         .filter(quizzes_dsl::uuid.eq(&uuid))
@@ -187,6 +188,9 @@ pub fn delete(conn: MainDbConn, uuid: Uuid) -> Result<Option<()>, Box<dyn Error>
         .execute(&*conn)?;
     rocket_contrib::databases::diesel::delete(questions_dsl::questions)
         .filter(questions_dsl::quiz.eq(&quiz.id))
+        .execute(&*conn)?;
+    rocket_contrib::databases::diesel::delete(user_quizzes_dsl::userquizzes)
+        .filter(user_quizzes_dsl::quiz.eq(&quiz.id))
         .execute(&*conn)?;
 
     Ok(Some(()))

@@ -181,6 +181,7 @@ pub fn load(conn: MainDbConn, id: i32) -> Result<Option<Json<JsonLabelSet>>, Box
 pub fn delete(conn: MainDbConn, uuid: Uuid) -> Result<Option<()>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
+    use crate::schema::userlabelsets::dsl as user_labelsets_dsl;
 
     let uuid = uuid.to_string();
     let labelset = labelsets_dsl::labelsets
@@ -198,6 +199,9 @@ pub fn delete(conn: MainDbConn, uuid: Uuid) -> Result<Option<()>, Box<dyn Error>
         .execute(&*conn)?;
     rocket_contrib::databases::diesel::delete(labels_dsl::labels)
         .filter(labels_dsl::labelset.eq(&labelset.id))
+        .execute(&*conn)?;
+    rocket_contrib::databases::diesel::delete(user_labelsets_dsl::userlabelsets)
+        .filter(user_labelsets_dsl::labelset.eq(&labelset.id))
         .execute(&*conn)?;
 
     Ok(Some(()))
