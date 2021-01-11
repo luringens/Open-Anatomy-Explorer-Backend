@@ -6,7 +6,7 @@ use crate::{
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use rocket::{
     get,
-    http::{Cookie, Cookies},
+    http::{Cookie, Cookies, Status},
     post, put,
 };
 use rocket_contrib::json::Json;
@@ -87,21 +87,26 @@ pub fn create(
 }
 
 #[get("/isadmin", rank = 1)]
-pub fn is_admin(_user: authentication::Admin) -> Result<Json<bool>, !> {
-    return Ok(Json(true));
+pub fn is_admin(_admin: authentication::Admin) -> Json<bool> {
+    Json(true)
 }
 
 #[get("/isadmin", rank = 2)]
-pub fn is_not_admin(_user: &authentication::User) -> Result<Json<bool>, !> {
-    return Ok(Json(false));
+pub fn is_not_admin(_user: &authentication::User) -> Json<bool> {
+    Json(false)
+}
+
+#[get("/isadmin", rank = 3)]
+pub fn is_not_logged_in() -> Status {
+    Status::Unauthorized
 }
 
 #[post("/refresh", rank = 1)]
-pub fn refresh_session_user(user: &authentication::User, mut cookies: Cookies) -> Result<(), !> {
+pub fn refresh_session_user(user: &authentication::User, mut cookies: Cookies) -> () {
     let user_id = user.0.id;
     remove_login_cookie(&mut cookies);
     add_login_cookie(&mut cookies, user_id);
-    return Ok(());
+    ()
 }
 
 #[post("/refresh", rank = 2)]
