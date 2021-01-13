@@ -37,7 +37,10 @@ fn main() {
     }
 
     // Set up CORS as this API will be called from other pages.
-    let mut allowed_origins = vec![r"^https?://localhost:(\d+){1,6}$".to_owned()];
+    let mut allowed_origins = vec![
+        r"^https?://localhost:(\d+){1,6}$".to_owned(),
+        r"^https?://oah\.stiansoltvedt\.com$".to_owned(),
+    ];
     if let Ok(cors) = std::env::var("CORS") {
         allowed_origins.push(cors);
     }
