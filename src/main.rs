@@ -51,8 +51,9 @@ fn main() {
         .expect("Failed to initialize CORS.");
 
     // Mount paths and cors fairing and launch the application.
-    rocket::ignite()
+    let mut rocket = rocket::ignite()
         .attach(MainDbConn::fairing())
+        .attach(cors)
         .mount(
             "/quiz",
             routes![quiz::load, quiz::create, quiz::delete, quiz::put],
@@ -69,7 +70,7 @@ fn main() {
         )
         .mount(
             "/models",
-            StaticFiles::from(std::env::var("MODELS_DIR").unwrap()).rank(isize::max_value()),
+            StaticFiles::from(std::env::var("MODELS_DIR").unwrap()).rank(isize::max_value() - 1),
         )
         .mount("/models", routes![models_index])
         .mount(
@@ -107,9 +108,18 @@ fn main() {
                 users::refresh_session_user,
                 users::refresh_session_loggedout,
             ],
-        )
-        .attach(cors)
-        .launch();
+        );
+
+    // Attempt to mount the accompanying website as a static directory if present.
+    if let Ok(path) = std::env::var("SITE_DIR") {
+        if let Err(e) = std::fs::create_dir_all(&path) {
+            eprintln!("Path for 'MODELS_DIR' could not be created: {:?}", e);
+        } else {
+            rocket = rocket.mount("/", StaticFiles::from(path).rank(isize::max_value()));
+        }
+    }
+
+    rocket.launch();
 }
 
 /// Overrides models index with a json list of models.
