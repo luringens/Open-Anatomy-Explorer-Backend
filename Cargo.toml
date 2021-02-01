@@ -1,5 +1,5 @@
 [package]
-name = "inf319-backend"
+name = "open-anatomy-explorer-backend"
 version = "0.1.0"
 authors = ["Stian Soltvedt <stian@soltvedt.info>"]
 edition = "2018"

@@ -1,4 +1,7 @@
-# INF319 Backend
+# Open Anatomy Explorer Backend
+
+This is the backend service of the Open Anatomy Explorer. It manages and stores data for the
+frontend, and can also serve the pages itself. For the frontend and project description, see the [Open-Anatomy-Explorer](https://github.com/stisol/Open-Anatomy-Explorer) github project.
 
 ## Configuration
 
