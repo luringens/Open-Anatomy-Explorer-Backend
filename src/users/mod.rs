@@ -64,7 +64,7 @@ pub fn create(
     conn: MainDbConn,
     mut cookies: Cookies,
     data: Json<Login>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<Status, Box<dyn Error>> {
     sodiumoxide::init().map_err(|_| "Failed to init sodiumoxide.")?;
     let hash = argon2id13::pwhash(
         data.password.as_bytes(),
@@ -78,9 +78,20 @@ pub fn create(
         password: hash.as_ref(),
     };
 
-    rocket_contrib::databases::diesel::insert_into(schema::users::table)
+    let result = rocket_contrib::databases::diesel::insert_into(schema::users::table)
         .values(&insert)
-        .execute(&*conn)?;
+        .execute(&*conn);
+
+    // Explicitly return HTTP 409 "Conflict" if the user already exists.
+    match result {
+        Ok(_) => {}
+        Err(diesel::result::Error::DatabaseError(
+            diesel::result::DatabaseErrorKind::UniqueViolation,
+            _,
+        )) => return Ok(Status::Conflict),
+        Err(e) => return Err(e.into()),
+    }
+
     let user = users
         .filter(username.eq(insert.username))
         .load::<crate::models::User>(&*conn)?
@@ -88,7 +99,7 @@ pub fn create(
         .ok_or("Could not find user that was just inserted!")?;
 
     add_login_cookie(&mut cookies, user.id);
-    Ok(())
+    Ok(Status::Ok)
 }
 
 #[get("/isadmin", rank = 1)]
