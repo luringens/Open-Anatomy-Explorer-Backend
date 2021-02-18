@@ -31,7 +31,11 @@ impl JsonLabelSet {
 
     fn to_new_label_set<'a>(&'a self, uuid: &'a str) -> NewLabelSet<'a> {
         NewLabelSet {
-            id: self.id,
+            id: if self.id.unwrap_or(0) == 0 {
+                None
+            } else {
+                self.id
+            },
             name: self.name.as_ref(),
             model: self.model,
             uuid,
@@ -70,7 +74,9 @@ impl<'a> From<&'a JsonLabel> for crate::models::NewLabel<'a> {
 
 #[post("/", format = "json", data = "<data>")]
 pub fn create(conn: MainDbConn, data: Json<JsonLabelSet>) -> Result<Json<String>, Box<dyn Error>> {
-    put(conn, util::create_uuid(), data)
+    let mut data = data.into_inner();
+    data.id = None; // Prerequisite to avoid an "insert".
+    add(conn, util::create_uuid(), data)
 }
 
 #[put("/<uuid>", format = "json", data = "<data>")]
@@ -79,10 +85,17 @@ pub fn put(
     uuid: Uuid,
     data: Json<JsonLabelSet>,
 ) -> Result<Json<String>, Box<dyn Error>> {
+    add(conn, uuid, data.into_inner())
+}
+
+pub fn add(
+    conn: MainDbConn,
+    uuid: Uuid,
+    data: JsonLabelSet,
+) -> Result<Json<String>, Box<dyn Error>> {
     use crate::schema::labels::dsl::{self as labels_dsl, labels};
     use crate::schema::labelsets::dsl::{self as labelsets_dsl, labelsets};
 
-    let data = data.into_inner();
     let uuid = (&uuid).to_string();
     let mut new_set = data.to_new_label_set(uuid.as_ref());
     let mut new_labels: Vec<_> = data.labels.iter().map(NewLabel::from).collect();

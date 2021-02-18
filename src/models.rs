@@ -35,7 +35,7 @@ pub struct NewModel<'a> {
     pub filename: &'a str,
 }
 
-#[derive(Queryable, Clone)]
+#[derive(Queryable, Clone, Debug)]
 pub struct LabelSet {
     pub id: i32,
     pub uuid: String,

@@ -32,7 +32,11 @@ pub struct JsonQuestion {
 impl JsonQuiz {
     pub fn to_db_quiz<'a>(&'a self, uuid: &'a str) -> models::NewQuiz<'a> {
         models::NewQuiz {
-            id: self.id,
+            id: if self.id.unwrap_or(0) == 0 {
+                None
+            } else {
+                self.id
+            },
             labelset: self.label_set,
             shuffle: self.shuffle as i16,
             name: self.name.as_ref(),
@@ -101,7 +105,9 @@ pub fn create(
     conn: MainDbConn,
     data: Json<JsonQuiz>,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
-    put(conn, util::create_uuid(), data)
+    let mut data = data.into_inner();
+    data.id = None; // Prerequisite to avoid an "insert".
+    add(conn, util::create_uuid(), data)
 }
 
 #[put("/<uuid>", format = "json", data = "<data>")]
@@ -110,9 +116,16 @@ pub fn put(
     uuid: Uuid,
     data: Json<JsonQuiz>,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
+    add(conn, uuid, data.into_inner())
+}
+
+pub fn add(
+    conn: MainDbConn,
+    uuid: Uuid,
+    quiz: JsonQuiz,
+) -> Result<Option<Json<String>>, Box<dyn Error>> {
     use crate::schema::labelsets::dsl as labelset_dsl;
 
-    let quiz = data.into_inner();
     let uuid = uuid.to_string();
 
     // Make sure the label set exists.
