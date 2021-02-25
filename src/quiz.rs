@@ -82,9 +82,9 @@ impl From<(models::Quiz, Vec<models::Question>)> for JsonQuiz {
 
 #[get("/<uuid>")]
 pub fn load(
+    _auth: &authentication::User,
     conn: MainDbConn,
     uuid: Uuid,
-    _auth: &authentication::User,
 ) -> Result<Option<Json<JsonQuiz>>, Box<dyn Error>> {
     let quiz = quizzes_dsl::quizzes
         .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
@@ -106,30 +106,30 @@ pub fn load(
 
 #[post("/", format = "json", data = "<data>")]
 pub fn create(
+    auth: authentication::Moderator,
     conn: MainDbConn,
     data: Json<JsonQuiz>,
-    auth: authentication::Moderator,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
     let mut data = data.into_inner();
     data.id = None; // Prerequisite to avoid an "insert".
-    add(conn, util::create_uuid(), data, auth)
+    add(auth, conn, util::create_uuid(), data)
 }
 
 #[put("/<uuid>", format = "json", data = "<data>")]
 pub fn put(
+    auth: authentication::Moderator,
     conn: MainDbConn,
     uuid: Uuid,
     data: Json<JsonQuiz>,
-    auth: authentication::Moderator,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
-    add(conn, uuid, data.into_inner(), auth)
+    add(auth, conn, uuid, data.into_inner())
 }
 
 pub fn add(
+    _auth: authentication::Moderator,
     conn: MainDbConn,
     uuid: Uuid,
     quiz: JsonQuiz,
-    _auth: authentication::Moderator,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
     use crate::schema::labelsets::dsl as labelset_dsl;
 
@@ -191,9 +191,9 @@ pub fn add(
 
 #[delete("/<uuid>")]
 pub fn delete(
+    _auth: authentication::Moderator,
     conn: MainDbConn,
     uuid: Uuid,
-    _auth: authentication::Moderator,
 ) -> Result<Option<()>, Box<dyn Error>> {
     use crate::schema::userquizzes::dsl as user_quizzes_dsl;
     let uuid = uuid.to_string();

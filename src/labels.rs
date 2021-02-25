@@ -75,30 +75,30 @@ impl<'a> From<&'a JsonLabel> for crate::models::NewLabel<'a> {
 
 #[post("/", format = "json", data = "<data>")]
 pub fn create(
+    auth: authentication::Moderator,
     conn: MainDbConn,
     data: Json<JsonLabelSet>,
-    auth: authentication::Moderator,
 ) -> Result<Json<String>, Box<dyn Error>> {
     let mut data = data.into_inner();
     data.id = None; // Prerequisite to avoid an "insert".
-    add(conn, util::create_uuid(), data, auth)
+    add(auth, conn, util::create_uuid(), data)
 }
 
 #[put("/<uuid>", format = "json", data = "<data>")]
 pub fn put(
+    auth: authentication::Moderator,
     conn: MainDbConn,
     uuid: Uuid,
     data: Json<JsonLabelSet>,
-    auth: authentication::Moderator,
 ) -> Result<Json<String>, Box<dyn Error>> {
-    add(conn, uuid, data.into_inner(), auth)
+    add(auth, conn, uuid, data.into_inner())
 }
 
 pub fn add(
+    _auth: authentication::Moderator,
     conn: MainDbConn,
     uuid: Uuid,
     data: JsonLabelSet,
-    _auth: authentication::Moderator,
 ) -> Result<Json<String>, Box<dyn Error>> {
     use crate::schema::labels::dsl::{self as labels_dsl, labels};
     use crate::schema::labelsets::dsl::{self as labelsets_dsl, labelsets};
@@ -148,9 +148,9 @@ pub fn add(
 
 #[get("/uuid/<uuid>")]
 pub fn load_by_uuid(
+    _auth: &authentication::User,
     conn: MainDbConn,
     uuid: Uuid,
-    _auth: &authentication::User,
 ) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
@@ -177,9 +177,9 @@ pub fn load_by_uuid(
 
 #[get("/<id>")]
 pub fn load(
+    _auth: &authentication::User,
     conn: MainDbConn,
     id: i32,
-    _auth: &authentication::User,
 ) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
@@ -204,9 +204,9 @@ pub fn load(
 
 #[delete("/<uuid>")]
 pub fn delete(
+    _auth: authentication::Moderator,
     conn: MainDbConn,
     uuid: Uuid,
-    _auth: authentication::Moderator,
 ) -> Result<Option<()>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
