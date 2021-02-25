@@ -14,11 +14,11 @@ pub struct JsonUserQuiz {
 
 impl From<crate::models::Quiz> for JsonUserQuiz {
     fn from(quiz: crate::models::Quiz) -> Self {
-        return Self {
+        Self {
             id: quiz.id,
             uuid: quiz.uuid,
             name: quiz.name,
-        };
+        }
     }
 }
 

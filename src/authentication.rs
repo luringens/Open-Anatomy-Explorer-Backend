@@ -30,7 +30,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a User {
                             .ok()
                             .and_then(|mut o| o.pop())
                     })
-                    .map(|u| User(u))
+                    .map(User)
             })
         });
         user_result.as_ref().or_forward(())

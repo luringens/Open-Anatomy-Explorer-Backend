@@ -9,8 +9,8 @@ use rocket_contrib::{json::Json, uuid::Uuid};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-#[serde(rename_all = "camelCase")]
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct JsonQuiz {
     pub id: Option<i32>,
     pub name: String,
@@ -19,8 +19,8 @@ pub struct JsonQuiz {
     pub questions: Vec<JsonQuestion>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct JsonQuestion {
     pub question_type: i16,
     pub text_prompt: String,
@@ -51,7 +51,7 @@ impl JsonQuiz {
                 quiz: quiz_id,
                 questiontype: q.question_type as i16,
                 textprompt: q.text_prompt.as_ref(),
-                textanswer: q.text_answer.as_ref().map(|s| s.as_str()),
+                textanswer: q.text_answer.as_deref(),
                 label: q.label_id,
                 showregions: q.show_regions.map(|_| 1).unwrap_or(0),
             })

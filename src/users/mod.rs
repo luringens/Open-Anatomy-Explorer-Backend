@@ -1,3 +1,5 @@
+#![allow(clippy::unit_arg)] // False positives.
+
 use crate::{
     authentication,
     schema::{self, users::dsl::*},
@@ -120,11 +122,10 @@ pub fn is_not_moderator(_user: &authentication::User) -> Json<bool> {
 }
 
 #[post("/refresh", rank = 1)]
-pub fn refresh_session_user(user: &authentication::User, mut cookies: Cookies) -> () {
+pub fn refresh_session_user(user: &authentication::User, mut cookies: Cookies) {
     let user_id = user.0.id;
     remove_login_cookie(&mut cookies);
     add_login_cookie(&mut cookies, user_id);
-    ()
 }
 
 #[post("/refresh", rank = 2)]
