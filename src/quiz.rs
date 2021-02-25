@@ -1,5 +1,5 @@
 use crate::{
-    models,
+    authentication, models,
     schema::{questions::dsl as questions_dsl, quizzes::dsl as quizzes_dsl},
     util, MainDbConn,
 };
@@ -81,7 +81,11 @@ impl From<(models::Quiz, Vec<models::Question>)> for JsonQuiz {
 }
 
 #[get("/<uuid>")]
-pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<JsonQuiz>>, Box<dyn Error>> {
+pub fn load(
+    conn: MainDbConn,
+    uuid: Uuid,
+    _auth: &authentication::User,
+) -> Result<Option<Json<JsonQuiz>>, Box<dyn Error>> {
     let quiz = quizzes_dsl::quizzes
         .filter(quizzes_dsl::uuid.eq(&uuid.to_string()))
         .limit(1)
@@ -104,10 +108,11 @@ pub fn load(conn: MainDbConn, uuid: Uuid) -> Result<Option<Json<JsonQuiz>>, Box<
 pub fn create(
     conn: MainDbConn,
     data: Json<JsonQuiz>,
+    auth: authentication::Moderator,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
     let mut data = data.into_inner();
     data.id = None; // Prerequisite to avoid an "insert".
-    add(conn, util::create_uuid(), data)
+    add(conn, util::create_uuid(), data, auth)
 }
 
 #[put("/<uuid>", format = "json", data = "<data>")]
@@ -115,14 +120,16 @@ pub fn put(
     conn: MainDbConn,
     uuid: Uuid,
     data: Json<JsonQuiz>,
+    auth: authentication::Moderator,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
-    add(conn, uuid, data.into_inner())
+    add(conn, uuid, data.into_inner(), auth)
 }
 
 pub fn add(
     conn: MainDbConn,
     uuid: Uuid,
     quiz: JsonQuiz,
+    _auth: authentication::Moderator,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
     use crate::schema::labelsets::dsl as labelset_dsl;
 
@@ -183,7 +190,11 @@ pub fn add(
 }
 
 #[delete("/<uuid>")]
-pub fn delete(conn: MainDbConn, uuid: Uuid) -> Result<Option<()>, Box<dyn Error>> {
+pub fn delete(
+    conn: MainDbConn,
+    uuid: Uuid,
+    _auth: authentication::Moderator,
+) -> Result<Option<()>, Box<dyn Error>> {
     use crate::schema::userquizzes::dsl as user_quizzes_dsl;
     let uuid = uuid.to_string();
     let quiz = quizzes_dsl::quizzes

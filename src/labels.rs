@@ -1,4 +1,5 @@
 use crate::{
+    authentication,
     models::{NewLabel, NewLabelSet},
     util, MainDbConn,
 };
@@ -73,10 +74,14 @@ impl<'a> From<&'a JsonLabel> for crate::models::NewLabel<'a> {
 }
 
 #[post("/", format = "json", data = "<data>")]
-pub fn create(conn: MainDbConn, data: Json<JsonLabelSet>) -> Result<Json<String>, Box<dyn Error>> {
+pub fn create(
+    conn: MainDbConn,
+    data: Json<JsonLabelSet>,
+    auth: authentication::Moderator,
+) -> Result<Json<String>, Box<dyn Error>> {
     let mut data = data.into_inner();
     data.id = None; // Prerequisite to avoid an "insert".
-    add(conn, util::create_uuid(), data)
+    add(conn, util::create_uuid(), data, auth)
 }
 
 #[put("/<uuid>", format = "json", data = "<data>")]
@@ -84,14 +89,16 @@ pub fn put(
     conn: MainDbConn,
     uuid: Uuid,
     data: Json<JsonLabelSet>,
+    auth: authentication::Moderator,
 ) -> Result<Json<String>, Box<dyn Error>> {
-    add(conn, uuid, data.into_inner())
+    add(conn, uuid, data.into_inner(), auth)
 }
 
 pub fn add(
     conn: MainDbConn,
     uuid: Uuid,
     data: JsonLabelSet,
+    _auth: authentication::Moderator,
 ) -> Result<Json<String>, Box<dyn Error>> {
     use crate::schema::labels::dsl::{self as labels_dsl, labels};
     use crate::schema::labelsets::dsl::{self as labelsets_dsl, labelsets};
@@ -143,6 +150,7 @@ pub fn add(
 pub fn load_by_uuid(
     conn: MainDbConn,
     uuid: Uuid,
+    _auth: &authentication::User,
 ) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
@@ -168,7 +176,11 @@ pub fn load_by_uuid(
 }
 
 #[get("/<id>")]
-pub fn load(conn: MainDbConn, id: i32) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
+pub fn load(
+    conn: MainDbConn,
+    id: i32,
+    _auth: &authentication::User,
+) -> Result<Option<Json<JsonLabelSet>>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
 
@@ -191,7 +203,11 @@ pub fn load(conn: MainDbConn, id: i32) -> Result<Option<Json<JsonLabelSet>>, Box
 }
 
 #[delete("/<uuid>")]
-pub fn delete(conn: MainDbConn, uuid: Uuid) -> Result<Option<()>, Box<dyn Error>> {
+pub fn delete(
+    conn: MainDbConn,
+    uuid: Uuid,
+    _auth: authentication::Moderator,
+) -> Result<Option<()>, Box<dyn Error>> {
     use crate::schema::labels::dsl as labels_dsl;
     use crate::schema::labelsets::dsl as labelsets_dsl;
     use crate::schema::userlabelsets::dsl as user_labelsets_dsl;

@@ -62,8 +62,8 @@ pub fn logout(mut cookies: Cookies) -> Result<(), !> {
 #[put("/create", format = "json", data = "<data>")]
 pub fn create(
     conn: MainDbConn,
-    mut cookies: Cookies,
     data: Json<Login>,
+    _auth: authentication::Admin,
 ) -> Result<Status, Box<dyn Error>> {
     sodiumoxide::init().map_err(|_| "Failed to init sodiumoxide.")?;
     let hash = argon2id13::pwhash(
@@ -92,13 +92,10 @@ pub fn create(
         Err(e) => return Err(e.into()),
     }
 
-    let user = users
+    users
         .filter(username.eq(insert.username))
-        .load::<crate::models::User>(&*conn)?
-        .pop()
-        .ok_or("Could not find user that was just inserted!")?;
+        .load::<crate::models::User>(&*conn)?;
 
-    add_login_cookie(&mut cookies, user.id);
     Ok(Status::Ok)
 }
 
@@ -112,9 +109,14 @@ pub fn is_not_admin(_user: &authentication::User) -> Json<bool> {
     Json(false)
 }
 
-#[get("/isadmin", rank = 3)]
-pub fn is_not_logged_in() -> Status {
-    Status::Unauthorized
+#[get("/ismoderator", rank = 1)]
+pub fn is_moderator(_moderator: authentication::Moderator) -> Json<bool> {
+    Json(true)
+}
+
+#[get("/ismoderator", rank = 2)]
+pub fn is_not_moderator(_user: &authentication::User) -> Json<bool> {
+    Json(false)
 }
 
 #[post("/refresh", rank = 1)]

@@ -33,13 +33,20 @@ pub fn upload(
 }
 
 #[get("/")]
-pub fn list(conn: MainDbConn) -> Result<Json<Vec<crate::models::Model>>, Box<dyn Error>> {
+pub fn list(
+    conn: MainDbConn,
+    _auth: &authentication::User,
+) -> Result<Json<Vec<crate::models::Model>>, Box<dyn Error>> {
     let models = dsl::models.load::<crate::models::Model>(&*conn)?;
     Ok(Json(models))
 }
 
 #[get("/lookup/<id>")]
-pub fn lookup(conn: MainDbConn, id: i32) -> Result<Option<Json<String>>, Box<dyn Error>> {
+pub fn lookup(
+    conn: MainDbConn,
+    id: i32,
+    _auth: &authentication::User,
+) -> Result<Option<Json<String>>, Box<dyn Error>> {
     let name = dsl::models
         .find(&id)
         .load::<crate::models::Model>(&*conn)?

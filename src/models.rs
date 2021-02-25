@@ -13,7 +13,21 @@ pub struct User {
 #[repr(i32)]
 pub enum Privilege {
     User = 0,
-    Administrator = 1,
+    Moderator = 1,
+    Administrator = 2,
+}
+
+impl std::convert::TryFrom<i32> for Privilege {
+    type Error = ();
+
+    fn try_from(v: i32) -> Result<Self, Self::Error> {
+        match v {
+            x if x == Self::User as i32 => Ok(Self::User),
+            x if x == Self::Moderator as i32 => Ok(Self::Moderator),
+            x if x == Self::Administrator as i32 => Ok(Self::Administrator),
+            _ => Err(()),
+        }
+    }
 }
 
 #[derive(Insertable)]

@@ -105,6 +105,8 @@ fn main() {
                 users::create,
                 users::is_admin,
                 users::is_not_admin,
+                users::is_moderator,
+                users::is_not_moderator,
                 users::refresh_session_user,
                 users::refresh_session_loggedout,
             ],

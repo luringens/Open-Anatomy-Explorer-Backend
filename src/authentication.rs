@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::MainDbConn;
 use crate::{models, schema::users::dsl as users};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
@@ -32,6 +34,23 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a User {
             })
         });
         user_result.as_ref().or_forward(())
+    }
+}
+
+pub struct Moderator(pub models::User);
+
+impl<'a, 'r> FromRequest<'a, 'r> for Moderator {
+    type Error = !;
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Moderator, !> {
+        let user = request.guard::<&User>()?;
+
+        match models::Privilege::try_from(user.0.privilege) {
+            Ok(models::Privilege::Moderator) | Ok(models::Privilege::Administrator) => {
+                Outcome::Success(Moderator(user.0.clone()))
+            }
+            _ => Outcome::Forward(()),
+        }
     }
 }
 
