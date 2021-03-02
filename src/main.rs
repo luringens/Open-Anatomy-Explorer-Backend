@@ -77,6 +77,8 @@ fn main() {
             "/modelstorage",
             routes![
                 modelstorage::upload,
+                modelstorage::upload_material,
+                modelstorage::upload_texture,
                 modelstorage::lookup,
                 modelstorage::list,
             ],

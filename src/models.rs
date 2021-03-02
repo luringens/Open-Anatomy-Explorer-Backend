@@ -41,12 +41,16 @@ pub struct NewUser<'a> {
 pub struct Model {
     pub id: i32,
     pub filename: String,
+    pub material: Option<String>,
+    pub texture: Option<String>,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Default)]
 #[table_name = "models"]
 pub struct NewModel<'a> {
     pub filename: &'a str,
+    pub material: Option<&'a str>,
+    pub texture: Option<&'a str>,
 }
 
 #[derive(Queryable, Clone, Debug)]

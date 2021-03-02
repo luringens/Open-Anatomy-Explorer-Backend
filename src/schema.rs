@@ -21,6 +21,8 @@ table! {
     models (id) {
         id -> Integer,
         filename -> Text,
+        material -> Nullable<Text>,
+        texture -> Nullable<Text>,
     }
 }
 

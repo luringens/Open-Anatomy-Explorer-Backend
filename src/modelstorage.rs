@@ -1,5 +1,5 @@
 use crate::{authentication, models::NewModel, schema::models::dsl, MainDbConn};
-use diesel::{query_dsl::filter_dsl::FindDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, RunQueryDsl};
 use rocket::{get, put, Data};
 use rocket_contrib::json::Json;
 use std::{error::Error, io::Read};
@@ -9,11 +9,73 @@ const UPLOAD_SIZE_LIMIT: u64 = 75 * MIB;
 
 #[put("/upload/<filename>", data = "<data>")]
 pub fn upload(
-    _admin: authentication::Admin,
+    admin: authentication::Admin,
     conn: MainDbConn,
     filename: String,
     data: Data,
 ) -> Result<Json<String>, Box<dyn Error>> {
+    let written = store_file(admin, &filename, data)?;
+    let filename = &filename;
+    rocket_contrib::databases::diesel::insert_into(dsl::models)
+        .values(&NewModel {
+            filename,
+            ..Default::default()
+        })
+        .execute(&*conn)?;
+
+    Ok(Json(written.to_string()))
+}
+
+#[put("/upload/mtl/<id>/<filename>", data = "<data>")]
+pub fn upload_material(
+    admin: authentication::Admin,
+    conn: MainDbConn,
+    id: i32,
+    filename: String,
+    data: Data,
+) -> Result<Json<i32>, Box<dyn Error>> {
+    use diesel::QueryDsl;
+    store_file(admin, &filename, data)?;
+
+    let target = dsl::models.filter(dsl::id.eq(&id));
+    rocket_contrib::databases::diesel::update(target)
+        .set(dsl::material.eq(&filename))
+        .execute(&*conn)?;
+
+    let model = dsl::models
+        .filter(dsl::filename.eq(&filename))
+        .limit(1)
+        .load::<crate::models::Model>(&*conn)?
+        .pop()
+        .ok_or("Could not find model that was just inserted!")?;
+
+    Ok(Json(model.id))
+}
+
+#[put("/upload/tex/<id>/<filename>", data = "<data>")]
+pub fn upload_texture(
+    admin: authentication::Admin,
+    conn: MainDbConn,
+    id: i32,
+    filename: String,
+    data: Data,
+) -> Result<Json<String>, Box<dyn Error>> {
+    use diesel::QueryDsl;
+    let written = store_file(admin, &filename, data)?;
+
+    let target = dsl::models.filter(dsl::id.eq(&id));
+    rocket_contrib::databases::diesel::update(target)
+        .set(dsl::texture.eq(&filename))
+        .execute(&*conn)?;
+
+    Ok(Json(written.to_string()))
+}
+
+pub fn store_file(
+    _admin: authentication::Admin,
+    filename: &str,
+    data: Data,
+) -> Result<u64, Box<dyn Error>> {
     let mut data_dir = std::env::var("MODELS_DIR")
         .map(std::path::PathBuf::from)
         .unwrap();
@@ -24,12 +86,7 @@ pub fn upload(
     let mut stream = data.open().take(UPLOAD_SIZE_LIMIT);
     let written = std::io::copy(&mut stream, &mut file)?;
 
-    let filename = &filename;
-    rocket_contrib::databases::diesel::insert_into(dsl::models)
-        .values(&NewModel { filename })
-        .execute(&*conn)?;
-
-    Ok(Json(written.to_string()))
+    Ok(written)
 }
 
 #[get("/")]
@@ -47,6 +104,7 @@ pub fn lookup(
     conn: MainDbConn,
     id: i32,
 ) -> Result<Option<Json<String>>, Box<dyn Error>> {
+    use diesel::query_dsl::filter_dsl::FindDsl;
     let name = dsl::models
         .find(&id)
         .load::<crate::models::Model>(&*conn)?
