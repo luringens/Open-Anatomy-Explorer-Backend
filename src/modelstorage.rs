@@ -103,13 +103,13 @@ pub fn lookup(
     _auth: &authentication::User,
     conn: MainDbConn,
     id: i32,
-) -> Result<Option<Json<String>>, Box<dyn Error>> {
+) -> Result<Option<Json<crate::models::Model>>, Box<dyn Error>> {
     use diesel::query_dsl::filter_dsl::FindDsl;
-    let name = dsl::models
+    let model = dsl::models
         .find(&id)
         .load::<crate::models::Model>(&*conn)?
         .pop()
-        .map(|model| Json(model.filename));
+        .map(|model| Json(model));
 
-    Ok(name)
+    Ok(model)
 }
