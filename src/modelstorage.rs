@@ -13,7 +13,7 @@ pub fn upload(
     conn: MainDbConn,
     filename: String,
     data: Data,
-) -> Result<Json<String>, Box<dyn Error>> {
+) -> Result<Json<u64>, Box<dyn Error>> {
     let written = store_file(admin, &filename, data)?;
     let filename = &filename;
     rocket_contrib::databases::diesel::insert_into(dsl::models)
@@ -23,7 +23,7 @@ pub fn upload(
         })
         .execute(&*conn)?;
 
-    Ok(Json(written.to_string()))
+    Ok(Json(written))
 }
 
 #[put("/upload/mtl/<id>/<filename>", data = "<data>")]
@@ -33,23 +33,16 @@ pub fn upload_material(
     id: i32,
     filename: String,
     data: Data,
-) -> Result<Json<i32>, Box<dyn Error>> {
+) -> Result<Json<u64>, Box<dyn Error>> {
     use diesel::QueryDsl;
-    store_file(admin, &filename, data)?;
+    let written = store_file(admin, &filename, data)?;
 
     let target = dsl::models.filter(dsl::id.eq(&id));
     rocket_contrib::databases::diesel::update(target)
         .set(dsl::material.eq(&filename))
         .execute(&*conn)?;
 
-    let model = dsl::models
-        .filter(dsl::filename.eq(&filename))
-        .limit(1)
-        .load::<crate::models::Model>(&*conn)?
-        .pop()
-        .ok_or("Could not find model that was just inserted!")?;
-
-    Ok(Json(model.id))
+    Ok(Json(written))
 }
 
 #[put("/upload/tex/<id>/<filename>", data = "<data>")]
@@ -59,7 +52,7 @@ pub fn upload_texture(
     id: i32,
     filename: String,
     data: Data,
-) -> Result<Json<String>, Box<dyn Error>> {
+) -> Result<Json<u64>, Box<dyn Error>> {
     use diesel::QueryDsl;
     let written = store_file(admin, &filename, data)?;
 
@@ -68,7 +61,7 @@ pub fn upload_texture(
         .set(dsl::texture.eq(&filename))
         .execute(&*conn)?;
 
-    Ok(Json(written.to_string()))
+    Ok(Json(written))
 }
 
 pub fn store_file(
