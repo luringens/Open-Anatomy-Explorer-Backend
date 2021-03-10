@@ -43,6 +43,7 @@ pub struct Model {
     pub filename: String,
     pub material: Option<String>,
     pub texture: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(Insertable, Default)]
@@ -51,6 +52,7 @@ pub struct NewModel<'a> {
     pub filename: &'a str,
     pub material: Option<&'a str>,
     pub texture: Option<&'a str>,
+    pub category: Option<&'a str>,
 }
 
 #[derive(Queryable, Clone, Debug)]

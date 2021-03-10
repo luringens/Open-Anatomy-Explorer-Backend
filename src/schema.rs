@@ -23,6 +23,7 @@ table! {
         filename -> Text,
         material -> Nullable<Text>,
         texture -> Nullable<Text>,
+        category -> Nullable<Text>,
     }
 }
 
