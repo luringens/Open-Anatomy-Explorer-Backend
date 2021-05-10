@@ -102,7 +102,7 @@ pub fn lookup(
         .find(&id)
         .load::<crate::models::Model>(&*conn)?
         .pop()
-        .map(|model| Json(model));
+        .map(Json);
 
     Ok(model)
 }
