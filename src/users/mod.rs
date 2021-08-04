@@ -8,7 +8,7 @@ use crate::{
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use rocket::{
     get,
-    http::{Cookie, Cookies, Status},
+    http::{Cookie, CookieJar, Status},
     post, put,
 };
 use rocket_contrib::json::Json;
@@ -29,7 +29,7 @@ pub struct Login {
 #[post("/login", format = "json", data = "<data>")]
 pub fn login(
     conn: MainDbConn,
-    mut cookies: Cookies,
+    mut CookieJar: CookieJar,
     data: Json<Login>,
 ) -> Result<Status, Box<dyn Error>> {
     let results = users
@@ -51,13 +51,13 @@ pub fn login(
         return Ok(Status::Unauthorized);
     }
 
-    add_login_cookie(&mut cookies, user.id);
+    add_login_cookie(&mut CookieJar, user.id);
     Ok(Status::Ok)
 }
 
 #[post("/logout")]
-pub fn logout(mut cookies: Cookies) -> Result<(), !> {
-    remove_login_cookie(&mut cookies);
+pub fn logout(mut CookieJar: CookieJar) -> Result<(), !> {
+    remove_login_cookie(&mut CookieJar);
     Ok(())
 }
 
@@ -122,26 +122,26 @@ pub fn is_not_moderator(_user: &authentication::User) -> Json<bool> {
 }
 
 #[post("/refresh", rank = 1)]
-pub fn refresh_session_user(user: &authentication::User, mut cookies: Cookies) {
+pub fn refresh_session_user(user: &authentication::User, mut CookieJar: CookieJar) {
     let user_id = user.0.id;
-    remove_login_cookie(&mut cookies);
-    add_login_cookie(&mut cookies, user_id);
+    remove_login_cookie(&mut CookieJar);
+    add_login_cookie(&mut CookieJar, user_id);
 }
 
 #[post("/refresh", rank = 2)]
 pub fn refresh_session_loggedout(
-    mut cookies: Cookies,
+    mut CookieJar: CookieJar,
 ) -> rocket::response::status::Unauthorized<()> {
-    remove_login_cookie(&mut cookies);
+    remove_login_cookie(&mut CookieJar);
     rocket::response::status::Unauthorized(None)
 }
 
-fn add_login_cookie(cookies: &mut Cookies, user_id: i32) {
-    cookies.add_private(Cookie::new("user_id", user_id.to_string()));
+fn add_login_cookie(CookieJar: &mut CookieJar, user_id: i32) {
+    CookieJar.add_private(Cookie::new("user_id", user_id.to_string()));
 }
 
-fn remove_login_cookie(cookies: &mut Cookies) {
-    if let Some(cookie) = cookies.get_private("user_id") {
-        cookies.remove_private(cookie);
+fn remove_login_cookie(CookieJar: &mut CookieJar) {
+    if let Some(cookie) = CookieJar.get_private("user_id") {
+        CookieJar.remove_private(cookie);
     }
 }

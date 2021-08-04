@@ -51,7 +51,7 @@ fn main() {
         .expect("Failed to initialize CORS.");
 
     // Mount paths and cors fairing and launch the application.
-    let mut rocket = rocket::ignite()
+    let mut rocket = rocket::build()
         .attach(MainDbConn::fairing())
         .attach(cors)
         .mount(

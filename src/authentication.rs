@@ -10,10 +10,10 @@ use rocket::{
 
 pub struct User(pub models::User);
 
-impl<'a, 'r> FromRequest<'a, 'r> for &'a User {
+impl<'a> FromRequest<'a> for &'a User {
     type Error = !;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<&'a User, !> {
+    fn from_request(request: &'a Request<'a>) -> request::Outcome<&'a User, !> {
         // This closure will execute at most once per request, regardless of
         // the number of times the `User` guard is executed.
 
@@ -39,10 +39,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a User {
 
 pub struct Moderator(pub models::User);
 
-impl<'a, 'r> FromRequest<'a, 'r> for Moderator {
+impl<'a> FromRequest<'a> for Moderator {
     type Error = !;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Moderator, !> {
+    fn from_request(request: &'a Request<'a>) -> request::Outcome<Moderator, !> {
         let user = request.guard::<&User>()?;
 
         match models::Privilege::try_from(user.0.privilege) {
@@ -56,10 +56,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for Moderator {
 
 pub struct Admin(pub models::User);
 
-impl<'a, 'r> FromRequest<'a, 'r> for Admin {
+impl<'a> FromRequest<'a> for Admin {
     type Error = !;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Admin, !> {
+    fn from_request(request: &'a Request<'a>) -> request::Outcome<Admin, !> {
         let user = request.guard::<&User>()?;
 
         if user.0.privilege == models::Privilege::Administrator as i32 {
